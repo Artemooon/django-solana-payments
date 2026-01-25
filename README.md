@@ -96,6 +96,6 @@ This package is licensed under the MIT License. See the LICENSE file for more de
 
 ## Contributing
 
-If you find any issues or have suggestions, feel free to open an issue or submit a pull request.
+Contributions are welcome. If you encounter a bug, have a feature request, or see an opportunity for improvement, please open an issue to discuss it. Pull requests are also welcome.
 
-If you find this project useful please support it with the star!
+If you find this project useful, consider giving it a star to support its development!

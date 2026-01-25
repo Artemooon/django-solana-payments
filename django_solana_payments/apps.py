@@ -4,7 +4,7 @@ from django.apps import AppConfig
 
 class SolanaPayConfig(AppConfig):
     name = "django_solana_payments"
-    verbose_name = "Solana Pay Integration"
+    verbose_name = "Solana Payments Integration for Django"
     default_auto_field = "django.db.models.BigAutoField"
 
     def ready(self):
