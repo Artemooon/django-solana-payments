@@ -38,18 +38,19 @@ A Django library for integrating Solana payments into your project. This library
     ```
 
 3.  **Migrate and Route**
-    ```bash
-    python manage.py migrate
-    ```
-    
-Open the admin panel and create payment token records, specifying the correct addresses for generating SPL tokens.
+```bash
+python manage.py migrate
+```
 
-    ```python
-    # urls.py
-    urlpatterns = [
-        path('payments/', include('django_solana_payments.urls')),
-    ]
-    ```
+```python
+# Add this to your urls.py
+urlpatterns = [
+    path('payments/', include('django_solana_payments.urls')),
+]
+```
+
+Open the admin panel and create payment token records, specifying the correct mint addresses for SPL tokens.
+
 
 ## Running the Example Project
 
