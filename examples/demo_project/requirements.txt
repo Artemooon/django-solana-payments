@@ -1,0 +1,2 @@
+django-solana-payments==0.1.0
+python-dotenv==1.2.1
