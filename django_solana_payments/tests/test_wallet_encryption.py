@@ -1,9 +1,11 @@
 import json
+
 import pytest
 from django.core.exceptions import ImproperlyConfigured
-from django_solana_payments.services.one_time_wallet_service import OneTimeWalletService
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
+
+from django_solana_payments.services.one_time_wallet_service import OneTimeWalletService
 
 
 @pytest.mark.django_db
@@ -36,7 +38,8 @@ def test_encryption_enabled_without_key(settings, test_settings):
 def test_wallet_encryption_enabled(settings, test_settings):
     # Generate a valid Fernet key (base64-encoded 32 bytes)
     from cryptography.fernet import Fernet
-    valid_key = Fernet.generate_key().decode('utf-8')
+
+    valid_key = Fernet.generate_key().decode("utf-8")
 
     test_settings["ONE_TIME_WALLETS_ENCRYPTION_ENABLED"] = True
     test_settings["ONE_TIME_WALLETS_ENCRYPTION_KEY"] = valid_key
@@ -60,5 +63,3 @@ def test_wallet_encryption_enabled(settings, test_settings):
     address = wallet.address
     assert address is not None
     assert isinstance(address, Pubkey)
-
-

@@ -1,13 +1,15 @@
 import pytest
 
-from django_solana_payments.services.solana_payments_service import SolanaPaymentsService
 from django_solana_payments.helpers import get_solana_payment_model
+from django_solana_payments.services.solana_payments_service import (
+    SolanaPaymentsService,
+)
 
 SolanaPayment = get_solana_payment_model()
 
 
 @pytest.mark.django_db
-def test_create_payment_authenticated_user(user):
+def test_create_payment_authenticated_user(user, payment_token):
     payment_data = {
         "user": user,
         "label": "Test payment",
@@ -23,7 +25,7 @@ def test_create_payment_authenticated_user(user):
 
 
 @pytest.mark.django_db
-def test_create_payment_guest_user():
+def test_create_payment_guest_user(payment_token):
     payment_data = {
         "user": None,
         "label": None,

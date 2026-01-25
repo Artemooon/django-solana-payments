@@ -9,8 +9,10 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 from solana.rpc.commitment import Confirmed
 
@@ -134,7 +136,9 @@ SOLANA_PAYMENTS = {
     "SOLANA_SENDER_KEYPAIR": os.environ.get("SOLANA_SENDER_KEYPAIR"),
     "SOLANA_SENDER_ADDRESS": os.environ.get("SOLANA_SENDER_ADDRESS"),
     "ONE_TIME_WALLETS_ENCRYPTION_ENABLED": True,
-    "ONE_TIME_WALLETS_ENCRYPTION_KEY": os.environ.get("ONE_TIME_WALLETS_ENCRYPTION_KEY"),
+    "ONE_TIME_WALLETS_ENCRYPTION_KEY": os.environ.get(
+        "ONE_TIME_WALLETS_ENCRYPTION_KEY"
+    ),
     "SOLANA_PAYMENT_MODEL": "payments.CustomSolanaPayment",
     "PAYMENT_CRYPTO_TOKEN_MODEL": "payments.CustomPaymentToken",
     "RPC_CALLS_COMMITMENT": Confirmed,

@@ -16,19 +16,25 @@ Including another URLconf
 """
 
 from django.urls import path
+from rest_framework.routers import SimpleRouter
 
-from django_solana_payments.api.views.allowed_payment_crypto_token import AllowedPaymentCryptoTokenViewSet
-from django_solana_payments.api.views.initiate_solana_payment import InitiateSolanaPayment
+from django_solana_payments.api.views.allowed_payment_crypto_token import (
+    AllowedPaymentCryptoTokenViewSet,
+)
+from django_solana_payments.api.views.initiate_solana_payment import (
+    InitiateSolanaPayment,
+)
 from django_solana_payments.api.views.solana_pay_payment import SolanaPaymentViewSet
 from django_solana_payments.api.views.verify_transfer import VerifySolanaPayTransferView
-from rest_framework.routers import SimpleRouter
 
 router = SimpleRouter()
 router.register("payments", SolanaPaymentViewSet)
 router.register("payments-tokens", AllowedPaymentCryptoTokenViewSet)
 
 urlpatterns = [
-    path("verify-transfer/<str:payment_address>", VerifySolanaPayTransferView.as_view()),
+    path(
+        "verify-transfer/<str:payment_address>", VerifySolanaPayTransferView.as_view()
+    ),
     path("initiate/", InitiateSolanaPayment.as_view()),
 ]
 

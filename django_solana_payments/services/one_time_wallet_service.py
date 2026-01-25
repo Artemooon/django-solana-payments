@@ -1,13 +1,18 @@
 import logging
 import time
 
-from django_solana_payments.helpers import get_payment_crypto_token_model, get_solana_payment_model
-from django_solana_payments.settings import solana_payments_settings
-from django_solana_payments.models import OneTimePaymentWallet
-from django_solana_payments.services.wallet_encryption_service import WalletEncryptionService
-from solders.solders import Pubkey, Keypair
+from solders.solders import Keypair, Pubkey
 
 from django_solana_payments.choices import OneTimeWalletStateTypes, TokenTypes
+from django_solana_payments.helpers import (
+    get_payment_crypto_token_model,
+    get_solana_payment_model,
+)
+from django_solana_payments.models import OneTimePaymentWallet
+from django_solana_payments.services.wallet_encryption_service import (
+    WalletEncryptionService,
+)
+from django_solana_payments.settings import solana_payments_settings
 from django_solana_payments.solana.base_solana_client import base_solana_client
 from django_solana_payments.solana.solana_token_client import SolanaTokenClient
 from django_solana_payments.utils import chunked
@@ -16,10 +21,15 @@ solana_logger = logging.getLogger(__name__)
 
 AllowedPaymentCryptoToken = get_payment_crypto_token_model()
 
+
 class OneTimeWalletService:
     def __init__(self):
-        self.solana_token_client = SolanaTokenClient(base_solana_client=base_solana_client)
-        self.encryption_enabled = solana_payments_settings.ONE_TIME_WALLETS_ENCRYPTION_ENABLED
+        self.solana_token_client = SolanaTokenClient(
+            base_solana_client=base_solana_client
+        )
+        self.encryption_enabled = (
+            solana_payments_settings.ONE_TIME_WALLETS_ENCRYPTION_ENABLED
+        )
         self._encryption_service: WalletEncryptionService | None = None
 
         if self.encryption_enabled:
@@ -48,28 +58,36 @@ class OneTimeWalletService:
 
         return keypair, keypair_json
 
-    def create_one_time_wallet(self, should_create_atas: bool = True) -> tuple[Keypair, str, OneTimePaymentWallet]:
+    def create_one_time_wallet(
+        self, should_create_atas: bool = True
+    ) -> tuple[Keypair, str, OneTimePaymentWallet]:
         """
         Creates a record for one time wallet and associated token addresses if needed
         """
-        reference_keypair, keypair_json = self.generate_one_time_wallet_and_encrypt_if_needed()
+        reference_keypair, keypair_json = (
+            self.generate_one_time_wallet_and_encrypt_if_needed()
+        )
         reference_pubkey_string = str(reference_keypair.pubkey())
 
-        wallet = OneTimePaymentWallet.objects.create(
-            keypair_json=keypair_json
-        )
+        wallet = OneTimePaymentWallet.objects.create(keypair_json=keypair_json)
 
         solana_logger.info(f"Generated one time wallet: {reference_pubkey_string}")
 
         if should_create_atas:
             self.create_atas_for_one_time_wallet_from_active_tokens(wallet)
-            solana_logger.info(f"Generated ATA's for active tokens for one time wallet: {reference_pubkey_string}")
+            solana_logger.info(
+                f"Generated ATA's for active tokens for one time wallet: {reference_pubkey_string}"
+            )
 
         return reference_keypair, reference_pubkey_string, wallet
 
-    def create_atas_for_one_time_wallet_from_active_tokens(self, wallet: OneTimePaymentWallet, max_atas_per_tx: int = 8):
+    def create_atas_for_one_time_wallet_from_active_tokens(
+        self, wallet: OneTimePaymentWallet, max_atas_per_tx: int = 8
+    ):
 
-        allowed_payment_crypto_tokens = AllowedPaymentCryptoToken.objects.filter(is_active=True, token_type=TokenTypes.SPL)
+        allowed_payment_crypto_tokens = AllowedPaymentCryptoToken.objects.filter(
+            is_active=True, token_type=TokenTypes.SPL
+        )
 
         spl_mints = allowed_payment_crypto_tokens.values_list("mint_address", flat=True)
         spl_mints = [Pubkey.from_string(spl_mint) for spl_mint in spl_mints]
@@ -77,7 +95,9 @@ class OneTimeWalletService:
         reference_keypair = self.load_keypair(wallet.keypair_json)
 
         for chunk in chunked(spl_mints, max_atas_per_tx):
-            SolanaTokenClient(base_solana_client=base_solana_client).create_associated_token_addresses_for_mints(
+            SolanaTokenClient(
+                base_solana_client=base_solana_client
+            ).create_associated_token_addresses_for_mints(
                 recipient=reference_keypair.pubkey(), mints=chunk
             )
 
@@ -88,19 +108,17 @@ class OneTimeWalletService:
         return Keypair.from_json(stored_value)
 
     def close_one_time_wallet_atas(
-            self,
-            one_time_wallet: OneTimePaymentWallet,
-            rent_receiver_address: Pubkey,
-            max_atas_per_tx: int = 8
+        self,
+        one_time_wallet: OneTimePaymentWallet,
+        rent_receiver_address: Pubkey,
+        max_atas_per_tx: int = 8,
     ) -> bool:
         """
         Closes all empty associated token accounts (ATAs) for a one-time wallet
         and recovers rent to recipient_address.
         """
 
-        decrypted_sender_keypair = self.load_keypair(
-            one_time_wallet.keypair_json
-        )
+        decrypted_sender_keypair = self.load_keypair(one_time_wallet.keypair_json)
 
         solana_logger.info(
             "Closing ATAs for one-time wallet %s (pubkey=%s)",
@@ -112,15 +130,16 @@ class OneTimeWalletService:
         filter_path = f"crypto_prices__{self._solana_payment_related_name}__one_time_payment_wallet"
         mint_addresses = (
             AllowedPaymentCryptoToken.objects.filter(
-                **{filter_path: one_time_wallet},
-                mint_address__isnull=False
+                **{filter_path: one_time_wallet}, mint_address__isnull=False
             )
             .values_list("mint_address", flat=True)
             .distinct()
         )
 
         if not mint_addresses:
-            solana_logger.info("No associated tokens found for wallet %s", one_time_wallet.id)
+            solana_logger.info(
+                "No associated tokens found for wallet %s", one_time_wallet.id
+            )
             return True
 
         atas_to_close: list[Pubkey] = []
@@ -144,10 +163,9 @@ class OneTimeWalletService:
 
             try:
                 token_balance = (
-                    base_solana_client.http_client
-                    .get_token_account_balance(ata)
-                    .value
-                    .amount
+                    base_solana_client.http_client.get_token_account_balance(
+                        ata
+                    ).value.amount
                 )
             except Exception as e:
                 solana_logger.warning("Failed to read token balance for %s: %s", ata, e)
@@ -164,7 +182,9 @@ class OneTimeWalletService:
             atas_to_close.append(ata)
 
         if not atas_to_close:
-            solana_logger.info("No ATAs eligible for closing for wallet %s", one_time_wallet.id)
+            solana_logger.info(
+                "No ATAs eligible for closing for wallet %s", one_time_wallet.id
+            )
             return True
 
         # 3. Close all eligible ATAs (batch-safe)
@@ -186,7 +206,9 @@ class OneTimeWalletService:
 
         return bool(results)
 
-    def close_expired_one_time_wallets(self, sleep_interval_seconds: float | int | None = None):
+    def close_expired_one_time_wallets(
+        self, sleep_interval_seconds: float | int | None = None
+    ):
         """
         Close all one-time Solana wallets that are:
         - in PAYMENT_EXPIRED state (linked payment expired).
@@ -206,7 +228,9 @@ class OneTimeWalletService:
 
         wallets = list(target_wallets)
         closed_wallets_ids = []
-        recipient_address_pubkey = Pubkey.from_string(solana_payments_settings.SOLANA_SENDER_ADDRESS)
+        recipient_address_pubkey = Pubkey.from_string(
+            solana_payments_settings.SOLANA_SENDER_ADDRESS
+        )
 
         for wallet in wallets:
             try:
@@ -219,7 +243,9 @@ class OneTimeWalletService:
                     print(f"Closed one-time wallet: {wallet.id}")
 
                 if sleep_interval_seconds:
-                    time.sleep(sleep_interval_seconds)  # prevent blockchain rate limiting
+                    time.sleep(
+                        sleep_interval_seconds
+                    )  # prevent blockchain rate limiting
             except Exception as e:
                 print(f"Failed to close wallet {wallet.id}: {e}")
                 continue

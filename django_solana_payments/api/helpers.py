@@ -12,7 +12,8 @@ def get_initiate_solana_payment_serializer() -> type[serializers.Serializer]:
             fields = [
                 field.name
                 for field in SolanaPayment._meta.fields
-                if field.name not in [
+                if field.name
+                not in [
                     "id",
                     "payment_address",
                     "one_time_payment_wallet",
@@ -25,8 +26,7 @@ def get_initiate_solana_payment_serializer() -> type[serializers.Serializer]:
                 ]
             ]
             extra_kwargs = {
-                field.name: {"required": False}
-                for field in SolanaPayment._meta.fields
+                field.name: {"required": False} for field in SolanaPayment._meta.fields
             }
 
     return InitiateSolanaPaymentSerializer

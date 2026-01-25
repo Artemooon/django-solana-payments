@@ -20,6 +20,7 @@ class ViewException(BaseAPIException):
 
 class SolanaPaymentsError(Exception):
     """Base exception for the library."""
+
     code: str = "solana_payments_error"
     message: str = "Solana payments error"
 
@@ -30,6 +31,7 @@ class PaymentError(SolanaPaymentsError):
 
 class PaymentNotFoundError(PaymentError):
     code = "payment_not_found"
+
     def __init__(self, reference: str):
         super().__init__(f"Payment with reference '{reference}' was not found")
         self.reference = reference
@@ -45,6 +47,7 @@ class PaymentPricingError(PaymentError):
 
 class PaymentTokenPriceNotFoundError(PaymentPricingError):
     code = "payment_token_price_not_found"
+
     def __init__(self, token_mint_address: str):
         super().__init__(
             f"Payment token price not found for mint_address={token_mint_address}"
@@ -53,6 +56,7 @@ class PaymentTokenPriceNotFoundError(PaymentPricingError):
 
 class InvalidPaymentAmountError(PaymentError):
     code = "invalid_payment_amount"
+
     def __init__(self, expected, actual):
         super().__init__(
             f"Invalid transfer amount: expected={expected}, actual={actual}"

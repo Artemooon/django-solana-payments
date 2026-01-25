@@ -27,17 +27,29 @@ class SolanaTokenClient:
     def __init__(self, base_solana_client: BaseSolanaClient):
         self.base_solana_client = base_solana_client
 
-    def get_or_create_associated_token_address(self, wallet_address: Pubkey, token_mint_address: Pubkey) -> Pubkey:
-        associated_token_address = self.get_associated_token_address(wallet_address, token_mint_address)
+    def get_or_create_associated_token_address(
+        self, wallet_address: Pubkey, token_mint_address: Pubkey
+    ) -> Pubkey:
+        associated_token_address = self.get_associated_token_address(
+            wallet_address, token_mint_address
+        )
 
-        token_account = self.base_solana_client.http_client.get_account_info(associated_token_address)
+        token_account = self.base_solana_client.http_client.get_account_info(
+            associated_token_address
+        )
         if not token_account.value:
-            self.create_associated_token_addresses_for_mints(wallet_address, [token_mint_address])
+            self.create_associated_token_addresses_for_mints(
+                wallet_address, [token_mint_address]
+            )
 
         return associated_token_address
 
-    def get_associated_token_address(self, wallet_address: Pubkey, token_mint_address: Pubkey,
-                                     commitment: Commitment = solana_payments_settings.RPC_CALLS_COMMITMENT) -> Pubkey:
+    def get_associated_token_address(
+        self,
+        wallet_address: Pubkey,
+        token_mint_address: Pubkey,
+        commitment: Commitment = solana_payments_settings.RPC_CALLS_COMMITMENT,
+    ) -> Pubkey:
         mint_info = self.base_solana_client.http_client.get_account_info(
             token_mint_address, commitment=commitment
         )
@@ -50,12 +62,18 @@ class SolanaTokenClient:
         # must match what the Associated Token program expects
         seeds = [bytes(wallet_address), bytes(program_owner), bytes(token_mint_address)]
 
-        associated_token_address, _ = Pubkey.find_program_address(seeds, ASSOCIATED_TOKEN_PROGRAM_ID)
+        associated_token_address, _ = Pubkey.find_program_address(
+            seeds, ASSOCIATED_TOKEN_PROGRAM_ID
+        )
 
         return associated_token_address
 
-    def create_associated_token_addresses_for_mints(self, recipient: Pubkey, mints: list[Pubkey],
-                                                    commitment: Commitment = solana_payments_settings.RPC_CALLS_COMMITMENT) -> Signature:
+    def create_associated_token_addresses_for_mints(
+        self,
+        recipient: Pubkey,
+        mints: list[Pubkey],
+        commitment: Commitment = solana_payments_settings.RPC_CALLS_COMMITMENT,
+    ) -> Signature:
         """
         Creates and sends transactions to close all specified token accounts.
         """
@@ -67,11 +85,9 @@ class SolanaTokenClient:
         instructions = []
 
         for mint in mints:
-            mint_info = (
-                self.base_solana_client.http_client
-                .get_account_info(mint, commitment=commitment)
-                .value
-            )
+            mint_info = self.base_solana_client.http_client.get_account_info(
+                mint, commitment=commitment
+            ).value
 
             instructions.append(
                 create_associated_token_account(
@@ -91,7 +107,9 @@ class SolanaTokenClient:
             message=msg,
             recent_blockhash=latest_blockhash.blockhash,
         )
-        sent_transaction_sig = self.base_solana_client.send_transaction_with_retry(transaction)
+        sent_transaction_sig = self.base_solana_client.send_transaction_with_retry(
+            transaction
+        )
 
         self.base_solana_client.confirm_transaction(sent_transaction_sig)
 
@@ -153,11 +171,15 @@ class SolanaTokenClient:
         )
 
         try:
-            sent_transaction_sig = self.base_solana_client.send_transaction_with_retry(tx)
+            sent_transaction_sig = self.base_solana_client.send_transaction_with_retry(
+                tx
+            )
             solana_client_logger.info(f"Transaction sent: {sent_transaction_sig}")
             # Confirm the transaction
             self.base_solana_client.confirm_transaction(sent_transaction_sig)
-            solana_client_logger.info(f"Transaction {sent_transaction_sig} confirmed. Rent has been recovered.")
+            solana_client_logger.info(
+                f"Transaction {sent_transaction_sig} confirmed. Rent has been recovered."
+            )
             return True
         except Exception as e:
             solana_client_logger.warning(f"An error occurred: {e}")

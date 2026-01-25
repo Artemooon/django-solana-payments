@@ -2,7 +2,10 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from django_solana_payments.choices import TokenTypes
-from django_solana_payments.helpers import get_payment_crypto_token_model, get_solana_payment_model
+from django_solana_payments.helpers import (
+    get_payment_crypto_token_model,
+    get_solana_payment_model,
+)
 from django_solana_payments.models import SolanaPayPaymentCryptoPrice
 
 SolanaPayment = get_solana_payment_model()
@@ -12,6 +15,7 @@ class AllowedCryptoTokenSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_payment_crypto_token_model()
         fields = "__all__"
+
 
 class SolanaPayPaymentCryptoPriceSerializer(serializers.ModelSerializer):
     token_mint_address = serializers.SerializerMethodField()
@@ -26,6 +30,7 @@ class SolanaPayPaymentCryptoPriceSerializer(serializers.ModelSerializer):
 
     def get_token_type(self, obj):
         return obj.token.token_type
+
 
 class SolanaPaymentSerializer(serializers.ModelSerializer):
     crypto_prices = SolanaPayPaymentCryptoPriceSerializer(many=True)
@@ -48,7 +53,6 @@ class VerifySolanaPayTransferQuerySerializer(serializers.Serializer):
         required=False,
         default=dict,
     )
-
 
     def validate(self, attrs):
         if attrs.get("token_type") == TokenTypes.SPL and not attrs.get("mint_address"):

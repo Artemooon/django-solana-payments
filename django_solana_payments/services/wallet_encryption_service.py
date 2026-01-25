@@ -1,9 +1,11 @@
 import logging
+
 from cryptography.fernet import Fernet, InvalidToken
 from django.core.exceptions import ImproperlyConfigured
 from solders.solders import Keypair
 
 solana_logger = logging.getLogger(__name__)
+
 
 class WalletEncryptionService:
     def __init__(self, encryption_key: str):

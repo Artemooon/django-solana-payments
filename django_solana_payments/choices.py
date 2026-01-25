@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class SolanaPaymentStatusTypes(models.TextChoices):
     INITIATED = "initiated"  # this status is assigned when user requested data to make a transfer
     FINALIZED = "finalized"

@@ -1,5 +1,6 @@
 from django.db import models
-from django_solana_payments.models import AbstractSolanaPayment, AbstractPaymentToken
+
+from django_solana_payments.models import AbstractPaymentToken, AbstractSolanaPayment
 
 
 class CustomSolanaPayment(AbstractSolanaPayment):

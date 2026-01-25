@@ -10,7 +10,6 @@ from solders.transaction_status import TransactionStatus
 from django_solana_payments.settings import solana_payments_settings
 from django_solana_payments.solana.base_solana_client import BaseSolanaClient
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -28,8 +27,12 @@ class SolanaTransactionQueryClient:
         )
         return response.value
 
-    def get_transactions_for_address(self, address: Pubkey, limit: Optional[int] = 2,
-                                     commitment: Commitment = solana_payments_settings.RPC_CALLS_COMMITMENT) -> list[GetTransactionResp]:
+    def get_transactions_for_address(
+        self,
+        address: Pubkey,
+        limit: Optional[int] = 2,
+        commitment: Commitment = solana_payments_settings.RPC_CALLS_COMMITMENT,
+    ) -> list[GetTransactionResp]:
         tx_signatures = self.base_solana_client.http_client.get_signatures_for_address(
             address, limit=limit, commitment=commitment
         ).value
@@ -41,7 +44,9 @@ class SolanaTransactionQueryClient:
         ]
         return transactions
 
-    def extract_fee_payer_from_transaction_details(self, transaction_details) -> Pubkey | None:
+    def extract_fee_payer_from_transaction_details(
+        self, transaction_details
+    ) -> Pubkey | None:
         tx_result = transaction_details.value.transaction.transaction
 
         if tx_result:

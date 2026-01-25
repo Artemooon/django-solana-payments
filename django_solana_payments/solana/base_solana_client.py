@@ -1,17 +1,16 @@
 import logging
 
+import httpx
+import stamina
 from solana.exceptions import SolanaRpcException
-from solders.solders import Transaction
-
-from django_solana_payments.settings import solana_payments_settings
 from solana.rpc.api import Client
 from solana.rpc.commitment import Commitment
 from solders.keypair import Keypair
 from solders.signature import Signature
+from solders.solders import Transaction
 from spl.token.constants import NATIVE_DECIMALS
-import httpx
-import stamina
 
+from django_solana_payments.settings import solana_payments_settings
 from django_solana_payments.solana.dtos import ConfirmTransactionDTO
 
 solana_client_logger = logging.getLogger(__name__)
@@ -21,7 +20,10 @@ class BaseSolanaClient:
 
     def __init__(self, rpc_url: str = None):
         self._rpc_url = self._build_rpc_url(rpc_url)
-        self._http_client = Client(endpoint=self._rpc_url, commitment=solana_payments_settings.RPC_CALLS_COMMITMENT)
+        self._http_client = Client(
+            endpoint=self._rpc_url,
+            commitment=solana_payments_settings.RPC_CALLS_COMMITMENT,
+        )
         self.LAMPORTS_PER_SOL = 10**NATIVE_DECIMALS
 
     @staticmethod
@@ -45,7 +47,7 @@ class BaseSolanaClient:
             # Try JSON format first
             if isinstance(keypair_data, str):
                 # Check if it's a JSON array string
-                if keypair_data.strip().startswith('['):
+                if keypair_data.strip().startswith("["):
                     return Keypair.from_json(keypair_data)
                 # Otherwise assume it's base58
                 else:
@@ -76,12 +78,18 @@ class BaseSolanaClient:
         if commitment is None:
             commitment = solana_payments_settings.RPC_CALLS_COMMITMENT
 
-        transaction_confirmation = self.http_client.confirm_transaction(tx_signature, commitment=commitment)
+        transaction_confirmation = self.http_client.confirm_transaction(
+            tx_signature, commitment=commitment
+        )
         transaction_confirmation_data = transaction_confirmation.value
-        solana_client_logger.info(f"Transaction with signature: {str(tx_signature)} was confirmed")
+        solana_client_logger.info(
+            f"Transaction with signature: {str(tx_signature)} was confirmed"
+        )
 
         if not transaction_confirmation_data:
-            solana_client_logger.error(f"Transaction with signature: {str(tx_signature)} was not confirmed")
+            solana_client_logger.error(
+                f"Transaction with signature: {str(tx_signature)} was not confirmed"
+            )
             return ConfirmTransactionDTO(tx_signature=tx_signature)
 
         return ConfirmTransactionDTO(

@@ -4,16 +4,21 @@ Signal handlers for Solana payment events.
 This module demonstrates how to use the solana_payment_accepted signal
 to customize business logic when a payment is verified.
 """
+
 import logging
+
 from django.dispatch import receiver
-from django_solana_payments.signals import solana_payment_accepted
+
 from django_solana_payments.choices import SolanaPaymentStatusTypes
+from django_solana_payments.signals import solana_payment_accepted
 
 logger = logging.getLogger(__name__)
 
 
 @receiver(solana_payment_accepted)
-def handle_payment_accepted(sender, payment, transaction_status, payment_amount, **kwargs):
+def handle_payment_accepted(
+    sender, payment, transaction_status, payment_amount, **kwargs
+):
     """
     Custom handler that fires when a Solana payment is successfully verified.
 
@@ -43,8 +48,8 @@ def handle_payment_accepted(sender, payment, transaction_status, payment_amount,
         send_payment_confirmation_email(payment)
 
     # Example 2: Update related order status
-    if payment.meta_data and 'order_id' in payment.meta_data:
-        update_order_status(payment.meta_data['order_id'], 'paid')
+    if payment.meta_data and "order_id" in payment.meta_data:
+        update_order_status(payment.meta_data["order_id"], "paid")
 
     # Example 3: Grant premium access
     if payment.label == "Premium Subscription":
@@ -126,15 +131,18 @@ def log_payment_to_analytics(payment, transaction_status):
 
 # Example: Handler that only runs for finalized transactions
 @receiver(solana_payment_accepted)
-def handle_finalized_payments_only(sender, payment, transaction_status, payment_amount, **kwargs):
+def handle_finalized_payments_only(
+    sender, payment, transaction_status, payment_amount, **kwargs
+):
     """
     This handler only processes fully finalized transactions.
 
     Useful when you want to wait for maximum confirmation before taking action.
     """
     if transaction_status == SolanaPaymentStatusTypes.FINALIZED:
-        logger.info(f"Payment {payment.id} is FINALIZED - processing irreversible actions")
+        logger.info(
+            f"Payment {payment.id} is FINALIZED - processing irreversible actions"
+        )
 
         # Perform actions that should only happen after finalization
         # For example: shipping physical goods, permanent account upgrades, etc.
-

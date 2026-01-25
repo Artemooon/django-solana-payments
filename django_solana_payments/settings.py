@@ -13,7 +13,9 @@ class SolanaPaymentsSettings:
         solana_config = getattr(settings, "SOLANA_PAYMENTS", {})
         value = solana_config.get(key, default)
         if required and value is None:
-            raise ImproperlyConfigured(f"SOLANA_PAYMENTS['{key}'] is required in settings.py")
+            raise ImproperlyConfigured(
+                f"SOLANA_PAYMENTS['{key}'] is required in settings.py"
+            )
         return value
 
     @property
@@ -61,11 +63,16 @@ class SolanaPaymentsSettings:
 
     @property
     def PAYMENT_CRYPTO_TOKEN_MODEL(self):
-        return self._get_setting("PAYMENT_CRYPTO_TOKEN_MODEL", default="django_solana_payments.PaymentCryptoToken")
+        return self._get_setting(
+            "PAYMENT_CRYPTO_TOKEN_MODEL",
+            default="django_solana_payments.PaymentCryptoToken",
+        )
 
     @property
     def SOLANA_PAYMENT_MODEL(self):
-        return self._get_setting("SOLANA_PAYMENT_MODEL", default="django_solana_payments.SolanaPayment")
+        return self._get_setting(
+            "SOLANA_PAYMENT_MODEL", default="django_solana_payments.SolanaPayment"
+        )
 
 
 # Global instance - settings are read dynamically from django.conf.settings on each access

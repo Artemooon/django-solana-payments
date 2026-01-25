@@ -1,5 +1,8 @@
 from django.core.management import BaseCommand
-from django_solana_payments.services.solana_payments_service import SolanaPaymentsService
+
+from django_solana_payments.services.solana_payments_service import (
+    SolanaPaymentsService,
+)
 
 
 class Command(BaseCommand):

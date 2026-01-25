@@ -4,37 +4,55 @@ import time
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+from solders.solders import Pubkey
 
-from django_solana_payments.helpers import get_payment_crypto_token_model, get_solana_payment_model, get_solana_payment_related_name
+from django_solana_payments.choices import (
+    OneTimeWalletStateTypes,
+    SolanaPaymentStatusTypes,
+)
+from django_solana_payments.helpers import (
+    get_payment_crypto_token_model,
+    get_solana_payment_model,
+    get_solana_payment_related_name,
+)
+from django_solana_payments.models import (
+    OneTimePaymentWallet,
+    SolanaPayPaymentCryptoPrice,
+)
+from django_solana_payments.services.main_wallet_service import (
+    send_transaction_and_update_one_time_wallet,
+)
+from django_solana_payments.services.one_time_wallet_service import (
+    one_time_wallet_service,
+)
 from django_solana_payments.settings import solana_payments_settings
-from django_solana_payments.choices import SolanaPaymentStatusTypes, OneTimeWalletStateTypes
-from django_solana_payments.models import OneTimePaymentWallet, SolanaPayPaymentCryptoPrice
-from django_solana_payments.services.main_wallet_service import send_transaction_and_update_one_time_wallet
-from django_solana_payments.services.one_time_wallet_service import one_time_wallet_service
 from django_solana_payments.solana.base_solana_client import base_solana_client
 from django_solana_payments.solana.enums import TransactionTypeEnum
 from django_solana_payments.solana.solana_balance_client import SolanaBalanceClient
-from solders.solders import Pubkey
 
 logger = logging.getLogger(__name__)
 
 AllowedPaymentCryptoToken = get_payment_crypto_token_model()
 SolanaPayment = get_solana_payment_model()
 
+
 class SolanaPaymentsService:
 
-    def check_expired_solana_payments(self, sleep_interval_seconds: float | int | None = None):
+    def check_expired_solana_payments(
+        self, sleep_interval_seconds: float | int | None = None
+    ):
         expired_payments = SolanaPayment.objects.filter(
-            status=SolanaPaymentStatusTypes.INITIATED, expiration_date__lte=timezone.now()
+            status=SolanaPaymentStatusTypes.INITIATED,
+            expiration_date__lte=timezone.now(),
         )
         total_not_finished_payments = expired_payments.count()
         print(f"Total not finished solana payments: {total_not_finished_payments}")
 
         expired_payments.update(status=SolanaPaymentStatusTypes.EXPIRED)
 
-        wallet_ids = expired_payments.filter(one_time_payment_wallet__isnull=False).values_list(
-            "one_time_payment_wallet__id", flat=True
-        )
+        wallet_ids = expired_payments.filter(
+            one_time_payment_wallet__isnull=False
+        ).values_list("one_time_payment_wallet__id", flat=True)
 
         wallets = list(OneTimePaymentWallet.objects.filter(id__in=list(wallet_ids)))
 
@@ -42,7 +60,9 @@ class SolanaPaymentsService:
             state=OneTimeWalletStateTypes.PAYMENT_EXPIRED
         )
         closed_wallets_ids = []
-        recipient_address_pubkey = Pubkey.from_string(solana_payments_settings.SOLANA_SENDER_ADDRESS)
+        recipient_address_pubkey = Pubkey.from_string(
+            solana_payments_settings.SOLANA_SENDER_ADDRESS
+        )
 
         for wallet in wallets:
             try:
@@ -53,7 +73,9 @@ class SolanaPaymentsService:
                 if is_closed:
                     closed_wallets_ids.append(wallet.id)
                 if sleep_interval_seconds:
-                    time.sleep(sleep_interval_seconds)  # To prevent blockchain rate limiting
+                    time.sleep(
+                        sleep_interval_seconds
+                    )  # To prevent blockchain rate limiting
 
                 print(f"Closed expired one-time wallet: {wallet.address}")
             except Exception as e:
@@ -86,8 +108,12 @@ class SolanaPaymentsService:
 
         logger.info("Solana cleanup task finished.")
 
-    def send_solana_payments_from_one_time_wallets(self, sleep_interval_seconds: float | int | None = None):
-        payment_wallet_related_name = get_solana_payment_related_name("one_time_payment_wallet")
+    def send_solana_payments_from_one_time_wallets(
+        self, sleep_interval_seconds: float | int | None = None
+    ):
+        payment_wallet_related_name = get_solana_payment_related_name(
+            "one_time_payment_wallet"
+        )
         paid_token_related_path = f"{payment_wallet_related_name}__paid_token"
 
         one_time_wallets_with_balance = OneTimePaymentWallet.objects.select_related(
@@ -104,7 +130,9 @@ class SolanaPaymentsService:
         if count == 0:
             return
 
-        solana_balance_client = SolanaBalanceClient(base_solana_client=base_solana_client)
+        solana_balance_client = SolanaBalanceClient(
+            base_solana_client=base_solana_client
+        )
 
         for wallet in one_time_wallets_with_balance:
             wallet_keypair = one_time_wallet_service.load_keypair(wallet.keypair_json)
@@ -118,9 +146,13 @@ class SolanaPaymentsService:
             payment = getattr(wallet, payment_wallet_related_name)
             paid_token = payment.paid_token
 
-            balance_spl = solana_balance_client.get_spl_token_balance_by_address(
-                wallet_address, Pubkey.from_string(paid_token.mint_address)
-            ) if paid_token and paid_token.mint_address else None
+            balance_spl = (
+                solana_balance_client.get_spl_token_balance_by_address(
+                    wallet_address, Pubkey.from_string(paid_token.mint_address)
+                )
+                if paid_token and paid_token.mint_address
+                else None
+            )
 
             if balance_sol > 0:
                 transaction_type = TransactionTypeEnum.NATIVE
@@ -130,11 +162,15 @@ class SolanaPaymentsService:
                 transaction_amount = balance_spl
             else:
                 OneTimePaymentWallet.objects.filter(id=wallet.id).update(
-                    state=OneTimeWalletStateTypes.PAYMENT_EXPIRED, receiver_address=recipient_address
+                    state=OneTimeWalletStateTypes.PAYMENT_EXPIRED,
+                    receiver_address=recipient_address,
                 )
                 logger.info(
-                    f"One time wallet with id: {wallet.id} does not have any balance, mark it as payment expired")
-                one_time_wallet_service.close_expired_one_time_wallets(sleep_interval_seconds=0.2)
+                    f"One time wallet with id: {wallet.id} does not have any balance, mark it as payment expired"
+                )
+                one_time_wallet_service.close_expired_one_time_wallets(
+                    sleep_interval_seconds=0.2
+                )
                 OneTimePaymentWallet.objects.filter(id=wallet.id).update(
                     state=OneTimeWalletStateTypes.PAYMENT_EXPIRED_AND_WALLET_CLOSED
                 )
@@ -190,7 +226,9 @@ class SolanaPaymentsService:
             status=SolanaPaymentStatusTypes.INITIATED,
         )
 
-        payment_prices = self.create_payment_crypto_prices_from_allowed_payment_crypto_tokens()
+        payment_prices = (
+            self.create_payment_crypto_prices_from_allowed_payment_crypto_tokens()
+        )
 
         payment.crypto_prices.add(*payment_prices)
 

@@ -2,6 +2,7 @@ from typing import Type
 
 from django.apps import apps
 from django.core.exceptions import ImproperlyConfigured
+
 from django_solana_payments.models import AbstractPaymentToken, AbstractSolanaPayment
 from django_solana_payments.settings import solana_payments_settings
 
@@ -19,8 +20,7 @@ def get_payment_crypto_token_model() -> Type[AbstractPaymentToken]:
         return apps.get_model(model_name)
     except ValueError:
         raise ImproperlyConfigured(
-            "PAYMENT_CRYPTO_TOKEN_MODEL must be of the form "
-            "'app_label.ModelName'"
+            "PAYMENT_CRYPTO_TOKEN_MODEL must be of the form " "'app_label.ModelName'"
         )
     except LookupError:
         raise ImproperlyConfigured(
@@ -34,16 +34,14 @@ def get_solana_payment_model() -> Type[AbstractSolanaPayment]:
 
     if not isinstance(model_name, str):
         raise ImproperlyConfigured(
-            "SOLANA_PAYMENT_MODEL must be a string of the form "
-            "'app_label.ModelName'"
+            "SOLANA_PAYMENT_MODEL must be a string of the form " "'app_label.ModelName'"
         )
 
     try:
         return apps.get_model(model_name)
     except ValueError:
         raise ImproperlyConfigured(
-            "SOLANA_PAYMENT_MODEL must be of the form "
-            "'app_label.ModelName'"
+            "SOLANA_PAYMENT_MODEL must be of the form " "'app_label.ModelName'"
         )
     except LookupError:
         raise ImproperlyConfigured(

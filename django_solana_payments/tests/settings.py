@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -27,9 +28,9 @@ USE_TZ = True
 
 SOLANA_PAYMENTS = {
     "SOLANA_RPC_URL": "https://api.devnet.solana.com",
-    "SOLANA_RECEIVER_ADDRESS": os.environ.get("SOLANA_RECEIVER_ADDRESS"),
+    "SOLANA_RECEIVER_ADDRESS": "9oH3Yw9o1u8k6rJ1sMZ9pL5m7f7y7bKz3rXGx9ZyQ1mA",
     "SOLANA_SENDER_KEYPAIR": os.environ.get("SOLANA_SENDER_KEYPAIR"),
     "SOLANA_SENDER_ADDRESS": os.environ.get("SOLANA_SENDER_ADDRESS"),
     "ONE_TIME_WALLETS_ENCRYPTION_ENABLED": True,
-    "ONE_TIME_WALLETS_ENCRYPTION_KEY": "CK8u9nHAkt-UUf2nZLjLxHp2YoLqkap7oM9s2tO7QiE="
+    "ONE_TIME_WALLETS_ENCRYPTION_KEY": "v6EdqyuDAvh9dj9RQ-fGLqovy1KM4onalzw0Wl_EBE8=",
 }

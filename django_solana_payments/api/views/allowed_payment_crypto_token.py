@@ -1,9 +1,11 @@
-from django_solana_payments.api.serializers import AllowedCryptoTokenSerializer
-from django_solana_payments.helpers import get_payment_crypto_token_model
 from rest_framework.permissions import AllowAny
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from django_solana_payments.api.serializers import AllowedCryptoTokenSerializer
+from django_solana_payments.helpers import get_payment_crypto_token_model
+
 AllowedPaymentCryptoToken = get_payment_crypto_token_model()
+
 
 class AllowedPaymentCryptoTokenViewSet(ReadOnlyModelViewSet):
     queryset = AllowedPaymentCryptoToken.objects.filter(is_active=True)

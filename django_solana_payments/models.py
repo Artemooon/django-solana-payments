@@ -1,13 +1,18 @@
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ImproperlyConfigured, ValidationError
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CheckConstraint, Q
-from django_solana_payments.settings import solana_payments_settings
-
-from django_solana_payments.choices import OneTimeWalletStateTypes, TokenTypes, SolanaPaymentStatusTypes
-from django_solana_payments.services.wallet_encryption_service import WalletEncryptionService
 from solders.solders import Keypair
 
+from django_solana_payments.choices import (
+    OneTimeWalletStateTypes,
+    SolanaPaymentStatusTypes,
+    TokenTypes,
+)
+from django_solana_payments.services.wallet_encryption_service import (
+    WalletEncryptionService,
+)
+from django_solana_payments.settings import solana_payments_settings
 from django_solana_payments.utils import set_default_expiration_date
 
 User = get_user_model()
@@ -88,6 +93,7 @@ class AbstractSolanaPayment(models.Model):
     class Meta:
         abstract = True
 
+
 class PaymentCryptoToken(AbstractPaymentToken):
     name = models.CharField(max_length=255)
     symbol = models.CharField(max_length=128, unique=True)
@@ -98,8 +104,7 @@ class PaymentCryptoToken(AbstractPaymentToken):
             CheckConstraint(
                 condition=(
                     Q(token_type=TokenTypes.SPL, mint_address__isnull=False)
-                    |
-                    Q(token_type=TokenTypes.NATIVE, mint_address__isnull=True)
+                    | Q(token_type=TokenTypes.NATIVE, mint_address__isnull=True)
                 ),
                 name="mint_address_consistency",
             )
@@ -111,7 +116,11 @@ class PaymentCryptoToken(AbstractPaymentToken):
 
 class SolanaPayPaymentCryptoPrice(models.Model):
     amount_in_crypto = models.DecimalField(max_digits=30, decimal_places=18)
-    token = models.ForeignKey(solana_payments_settings.PAYMENT_CRYPTO_TOKEN_MODEL, on_delete=models.CASCADE, related_name="crypto_prices")
+    token = models.ForeignKey(
+        solana_payments_settings.PAYMENT_CRYPTO_TOKEN_MODEL,
+        on_delete=models.CASCADE,
+        related_name="crypto_prices",
+    )
     meta_data = models.JSONField(default=dict, blank=True)
 
     created = models.DateTimeField(auto_now_add=True)
@@ -124,7 +133,9 @@ class SolanaPayPaymentCryptoPrice(models.Model):
 class OneTimePaymentWallet(models.Model):
     keypair_json = models.JSONField()
     state = models.CharField(
-        max_length=50, choices=OneTimeWalletStateTypes.choices, default=OneTimeWalletStateTypes.CREATED
+        max_length=50,
+        choices=OneTimeWalletStateTypes.choices,
+        default=OneTimeWalletStateTypes.CREATED,
     )
     receiver_address = models.CharField(max_length=60, null=True, blank=True)
 
