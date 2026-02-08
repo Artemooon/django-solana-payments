@@ -82,7 +82,9 @@ class OneTimeWalletService:
         return reference_keypair, reference_pubkey_string, wallet
 
     def create_atas_for_one_time_wallet_from_active_tokens(
-        self, wallet: OneTimePaymentWallet, max_atas_per_tx: int = 8
+        self,
+        wallet: OneTimePaymentWallet,
+        max_atas_per_tx: int = solana_payments_settings.MAX_ATAS_PER_TX,
     ):
 
         allowed_payment_crypto_tokens = AllowedPaymentCryptoToken.objects.filter(
@@ -111,7 +113,7 @@ class OneTimeWalletService:
         self,
         one_time_wallet: OneTimePaymentWallet,
         rent_receiver_address: Pubkey,
-        max_atas_per_tx: int = 8,
+        max_atas_per_tx: int = solana_payments_settings.MAX_ATAS_PER_TX,
     ) -> bool:
         """
         Closes all empty associated token accounts (ATAs) for a one-time wallet

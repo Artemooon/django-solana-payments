@@ -74,6 +74,10 @@ class SolanaPaymentsSettings:
             "SOLANA_PAYMENT_MODEL", default="django_solana_payments.SolanaPayment"
         )
 
+    @property
+    def MAX_ATAS_PER_TX(self) -> int:
+        return self._get_setting("MAX_ATAS_PER_TX", default=8)
+
 
 # Global instance - settings are read dynamically from django.conf.settings on each access
 solana_payments_settings = SolanaPaymentsSettings()

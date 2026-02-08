@@ -38,9 +38,7 @@ SolanaPayment = get_solana_payment_model()
 
 class SolanaPaymentsService:
 
-    def check_expired_solana_payments(
-        self, sleep_interval_seconds: float | int | None = None
-    ):
+    def check_expired_solana_payments(self):
         expired_payments = SolanaPayment.objects.filter(
             status=SolanaPaymentStatusTypes.INITIATED,
             expiration_date__lte=timezone.now(),
@@ -48,50 +46,26 @@ class SolanaPaymentsService:
         total_not_finished_payments = expired_payments.count()
         print(f"Total not finished solana payments: {total_not_finished_payments}")
 
+        if total_not_finished_payments == 0:
+            return
+
         expired_payments.update(status=SolanaPaymentStatusTypes.EXPIRED)
 
         wallet_ids = expired_payments.filter(
             one_time_payment_wallet__isnull=False
         ).values_list("one_time_payment_wallet__id", flat=True)
 
-        wallets = list(OneTimePaymentWallet.objects.filter(id__in=list(wallet_ids)))
-
         OneTimePaymentWallet.objects.filter(id__in=list(wallet_ids)).update(
             state=OneTimeWalletStateTypes.PAYMENT_EXPIRED
         )
-        closed_wallets_ids = []
-        recipient_address_pubkey = Pubkey.from_string(
-            solana_payments_settings.SOLANA_SENDER_ADDRESS
+
+        print(
+            f"Marked {total_not_finished_payments} expired payments and their wallets."
         )
 
-        for wallet in wallets:
-            try:
-
-                is_closed = one_time_wallet_service.close_one_time_wallet_atas(
-                    wallet, recipient_address_pubkey
-                )
-                if is_closed:
-                    closed_wallets_ids.append(wallet.id)
-                if sleep_interval_seconds:
-                    time.sleep(
-                        sleep_interval_seconds
-                    )  # To prevent blockchain rate limiting
-
-                print(f"Closed expired one-time wallet: {wallet.address}")
-            except Exception as e:
-                print(f"Failed to close wallet {wallet.address}: {e}")
-                continue
-
-        OneTimePaymentWallet.objects.filter(id__in=closed_wallets_ids).update(
-            state=OneTimeWalletStateTypes.PAYMENT_EXPIRED_AND_WALLET_CLOSED,
-        )
-
-        if total_not_finished_payments > 0:
-            print(
-                f"Marked and closed: {total_not_finished_payments} expired payments. Closed wallets: {closed_wallets_ids}"
-            )
-
-    def mark_not_finished_solana_payments_as_expired(self):
+    def mark_not_finished_solana_payments_as_expired_and_close_wallets_accounts(
+        self, sleep_interval_seconds: float | int | None = None
+    ):
         logger.info("Starting Solana cleanup task...")
 
         try:
@@ -102,7 +76,9 @@ class SolanaPaymentsService:
 
         try:
             logger.info("Step 2: Closing expired one-time wallets")
-            one_time_wallet_service.close_expired_one_time_wallets()
+            one_time_wallet_service.close_expired_one_time_wallets(
+                sleep_interval_seconds
+            )
         except Exception as e:
             logger.warning(f"⚠ Error during close_expired_one_time_wallets: {e}")
 

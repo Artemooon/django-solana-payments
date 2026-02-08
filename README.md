@@ -1,4 +1,4 @@
-# Django Solana Payments 
+# Django Solana Payments
 
 A Django library for integrating Solana payments into your project. This library provides a flexible and customizable way to accept Solana payments with support for customizable models, an easy-to-use API, and management commands for processing online payments using the Solana blockchain.
 
@@ -15,6 +15,12 @@ A Django library for integrating Solana payments into your project. This library
     ```bash
     pip install django-solana-payments
     ```
+
+    For DRF support, which provides API endpoints for creating and managing payments, install the `drf` extra:
+    ```bash
+    pip install django-solana-payments[drf]
+    ```
+    This provides ready-to-use API endpoints for creating and managing payments.
 
 2.  **Configure `settings.py`**
     ```python
@@ -34,6 +40,7 @@ A Django library for integrating Solana payments into your project. This library
         "PAYMENT_CRYPTO_TOKEN_MODEL": "payments.CustomPaymentToken", # Custom model for solana payment token
         "RPC_CALLS_COMMITMENT": "Confirmed", # RPC Commitment
         "PAYMENT_ACCEPTANCE_COMMITMENT": "Confirmed", # Commitment for payment acceptance
+        "MAX_ATAS_PER_TX": 8, # Max associated token accounts to create/close per transaction
     }
     ```
 
