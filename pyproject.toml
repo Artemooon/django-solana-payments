@@ -12,6 +12,24 @@ authors = [
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.10"
+keywords = ["payments", "solana"]
+classifiers = [
+    "Environment :: Web Environment",
+    "Framework :: Django",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.2",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP",
+]
 
 dependencies = [
     "Django>=4.2",
@@ -44,4 +62,5 @@ addopts = "-ra -q"
 
 [project.urls]
 homepage = "https://github.com/Artemooon/django-solana-payments"
+documentation = "https://django-solana-payments.readthedocs.io/"
 issues = "https://github.com/Artemooon/django-solana-payments/issues"

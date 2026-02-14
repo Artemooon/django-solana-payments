@@ -1,13 +1,20 @@
 # Django Solana Payments
 
+![Documentation Status](https://app.readthedocs.org/projects/django-solana-payments/badge/?version=latest)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Artemooon/django-solana-payments/blob/main/LICENSE)
+
 A Django library for integrating Solana payments into your project. This library provides a flexible and customizable way to accept Solana payments with support for customizable models, an easy-to-use API, and management commands for processing online payments using the Solana blockchain.
 
 ## Key Features
 
--   **Flexibility and customization**: Use your own custom models for payments and tokens to fit your project's needs. Add custom logic using signals or callabacks
--   **Ease of integration**: Provides ready-to-use endpoints that can be used in existing DRF applications, or ready-to-use methods for Django applications that are not part of DRF. 
+-   **Flexibility and customization**: Use your own custom models for payments and tokens to fit your project's needs. Add custom logic using signals or callabacks.
+-   **Ease of integration**: Provides ready-to-use endpoints that can be used in existing DRF applications, or ready-to-use methods for Django applications that are not part of DRF.
+-   **Security and encryption**: Provides an out-of-the-box encryption mechanism that helps keep one-time payment wallets secure.
 -   **Management commands**: Includes management commands for handling expired payments and sending funds from one-time wallets.
--   **Security and encryption**: Provides an out-of-the-box encryption mechanism that helps keep one-time payment wallets secure
+
+## Documentation
+
+See the full documentation at https://django-solana-payments.readthedocs.io/
 
 ## Installation
 
