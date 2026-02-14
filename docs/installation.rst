@@ -49,7 +49,7 @@ Installation
 
         # Add this to your urls.py
         urlpatterns = [
-            path('payments/', include('django_solana_payments.urls')),
+            path('solana-payments/', include('django_solana_payments.urls')),
         ]
 
     Open the admin panel and create payment token records, specifying the correct mint addresses for SPL tokens.

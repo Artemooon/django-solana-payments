@@ -60,7 +60,7 @@ python manage.py migrate
 ```python
 # Add this to your urls.py
 urlpatterns = [
-    path('payments/', include('django_solana_payments.urls')),
+    path('solana-payments/', include('django_solana_payments.urls')),
 ]
 ```
 
