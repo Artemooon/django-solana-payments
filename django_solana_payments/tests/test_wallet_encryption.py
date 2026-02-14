@@ -1,11 +1,15 @@
 import json
 
 import pytest
+from cryptography.fernet import Fernet
 from django.core.exceptions import ImproperlyConfigured
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
 
 from django_solana_payments.services.one_time_wallet_service import OneTimeWalletService
+from django_solana_payments.services.wallet_encryption_service import (
+    WalletEncryptionService,
+)
 
 
 @pytest.mark.django_db
@@ -63,3 +67,41 @@ def test_wallet_encryption_enabled(settings, test_settings):
     address = wallet.address
     assert address is not None
     assert isinstance(address, Pubkey)
+
+
+def test_wallet_encryption_service_invalid_key_raises():
+    with pytest.raises(
+        ImproperlyConfigured, match="Invalid ONE_TIME_WALLETS_ENCRYPTION_KEY"
+    ):
+        WalletEncryptionService("invalid-key")
+
+
+def test_wallet_encryption_service_encrypt_decrypt_roundtrip():
+    key = Fernet.generate_key().decode("utf-8")
+    service = WalletEncryptionService(key)
+
+    plaintext = "sensitive-wallet-secret"
+    ciphertext = service.encrypt(plaintext)
+
+    assert ciphertext != plaintext
+    assert service.decrypt(ciphertext) == plaintext
+
+
+def test_wallet_encryption_service_decrypt_plain_keypair_json_fallback():
+    key = Fernet.generate_key().decode("utf-8")
+    service = WalletEncryptionService(key)
+    keypair = Keypair()
+
+    # decrypt() falls back to parsing raw keypair JSON when token is not encrypted.
+    decrypted = service.decrypt(keypair.to_json())
+
+    assert isinstance(decrypted, Keypair)
+    assert str(decrypted.pubkey()) == str(keypair.pubkey())
+
+
+def test_wallet_encryption_service_decrypt_invalid_plaintext_raises():
+    key = Fernet.generate_key().decode("utf-8")
+    service = WalletEncryptionService(key)
+
+    with pytest.raises(ValueError):
+        service.decrypt("not-a-token-and-not-a-keypair-json")

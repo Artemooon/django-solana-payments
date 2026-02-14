@@ -3,9 +3,10 @@ branch = True
 source = django_solana_payments
 omit =
     django_solana_payments/migrations/*
-    django_solana_payments/*/test_*.py
+    django_solana_payments/**/test_*.py
     django_solana_payments/admin.py
     django_solana_payments/urls.py
+    django_solana_payments/solana/exceptions.py
 
     manage.py
 

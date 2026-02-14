@@ -60,6 +60,7 @@ If you discover any additional ways to optimize costs, please let us know.
    :caption: Contents:
 
    installation
+   drf_api_usage
    payment_tokens
    custom_models
    payment_hooks

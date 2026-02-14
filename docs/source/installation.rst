@@ -53,3 +53,6 @@ Installation
         ]
 
     Open the admin panel and create payment token records, specifying the correct mint addresses for SPL tokens.
+    See :ref:`payment_tokens` for model fields, validation rules, and examples.
+
+    After routing, see :ref:`api_usage` for endpoint details and request examples.
