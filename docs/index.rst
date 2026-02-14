@@ -11,10 +11,17 @@ A plug-and-play Django library for accepting online payments via the Solana bloc
 Key Features
 ------------
 
--   **Flexibility and customization**: Use your own custom models for payments and tokens to fit your project's needs. Add custom logic using signals or callabacks
+-   **Flexibility and customization**: Use your own custom models for payments and tokens to fit your project's needs. Add custom logic using signals or callabacks.
 -   **Ease of integration**: Provides ready-to-use endpoints that can be used in existing DRF applications, or ready-to-use methods for Django applications that are not part of DRF.
+-   **Security and encryption**: Provides an out-of-the-box encryption mechanism that helps keep one-time payment wallets secure.
 -   **Management commands**: Includes management commands for handling expired payments and sending funds from one-time wallets.
--   **Security and encryption**: Provides an out-of-the-box encryption mechanism that helps keep one-time payment wallets secure
+
+Security Note
+-------------
+
+`django-solana-payments` does not read or exfiltrate your provided wallet keypairs and has no external access to your secret keys or funds.
+All wallet security controls, key management, maintenance policies, and security audits remain the responsibility of the user-facing application and its infrastructure.
+See the full `Disclaimer <https://github.com/Artemooon/django-solana-payments/blob/main/DISCLAIMER.md>`_.
 
 How It Works
 ------------
@@ -64,6 +71,7 @@ If you discover any additional ways to optimize costs, please let us know.
    payment_tokens
    custom_models
    payment_hooks
+   management_commands
    api_reference
 
 
