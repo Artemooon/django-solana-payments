@@ -1,7 +1,14 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../.."))
+sys.path.insert(0, os.path.abspath(".."))
+
+# Required for autodoc modules that import Django models/settings.
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_solana_payments.tests.settings")
+
+import django  # noqa: E402
+
+django.setup()
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
