@@ -15,6 +15,7 @@ Using Signals
 -------------
 
 The library sends a `solana_payment_accepted` signal when a payment is successfully verified and processed. You can listen for this signal to trigger your custom logic.
+This is a perfect way to add your own logic if you are using the DRF plugin and don't want to override any methods.
 
 The signal provides the following arguments:
 - `sender`: The class that sent the signal (`VerifyTransactionService`).
@@ -74,6 +75,8 @@ Remember to import your signals in your app's `apps.py` file to ensure they are 
 
         def ready(self):
             import your_app.signals  # noqa
+
+All examples can be found in the `demo project <https://github.com/Artemooon/django-solana-payments/blob/main/examples/demo_project/payments/signals.py>`_
 
 Using the `on_success` Callback
 -------------------------------

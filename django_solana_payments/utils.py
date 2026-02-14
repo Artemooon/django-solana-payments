@@ -12,10 +12,10 @@ T = TypeVar("T")
 def set_default_expiration_date():
     """
     Calculates the expiration date based on the user-defined
-    SOLANA_PAYMENTS['EXPIRATION_MINUTES'] setting.
+    SOLANA_PAYMENTS['PAYMENT_VALIDITY_SECONDS'] setting.
     """
-    minutes = solana_payments_settings.EXPIRATION_MINUTES
-    return timezone.now() + datetime.timedelta(minutes=minutes)
+    seconds = solana_payments_settings.PAYMENT_VALIDITY_SECONDS
+    return timezone.now() + datetime.timedelta(seconds=seconds)
 
 
 def chunked(iterable: Iterable[T], size: int) -> Iterator[List[T]]:

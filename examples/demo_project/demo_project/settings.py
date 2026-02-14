@@ -133,8 +133,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SOLANA_PAYMENTS = {
     "SOLANA_RPC_URL": "https://api.devnet.solana.com",
     "SOLANA_RECEIVER_ADDRESS": os.environ.get("SOLANA_RECEIVER_ADDRESS"),
-    "SOLANA_SENDER_KEYPAIR": os.environ.get("SOLANA_SENDER_KEYPAIR"),
-    "SOLANA_SENDER_ADDRESS": os.environ.get("SOLANA_SENDER_ADDRESS"),
+    "SOLANA_FEE_PAYER_KEYPAIR": os.environ.get("SOLANA_FEE_PAYER_KEYPAIR"),
     "ONE_TIME_WALLETS_ENCRYPTION_ENABLED": True,
     "ONE_TIME_WALLETS_ENCRYPTION_KEY": os.environ.get(
         "ONE_TIME_WALLETS_ENCRYPTION_KEY"
@@ -143,4 +142,5 @@ SOLANA_PAYMENTS = {
     "PAYMENT_CRYPTO_TOKEN_MODEL": "payments.CustomPaymentToken",
     "RPC_CALLS_COMMITMENT": Confirmed,
     "PAYMENT_ACCEPTANCE_COMMITMENT": Confirmed,
+    "PAYMENT_VALIDITY_SECONDS": 30 * 60,  # default: 30 minutes
 }

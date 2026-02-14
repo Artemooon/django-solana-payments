@@ -32,8 +32,8 @@ A Django library for integrating Solana payments into your project. This library
     SOLANA_PAYMENTS = {
         "RPC_URL": "https://api.mainnet-beta.solana.com",
         "RECEIVER_ADDRESS": "YOUR_WALLET_ADDRESS", # Wallet that receives funds
-        "SOLANA_SENDER_KEYPAIR": "WALLET_KEYPAIR", # Wallet keypair that pays network fees
-        "SOLANA_SENDER_ADDRESS": "NETWORK_FEES_WALLET_ADDRESS",
+        "SOLANA_FEE_PAYER_KEYPAIR": "WALLET_KEYPAIR", # Wallet keypair that pays network fees (address will be derived from the keypair)
+        # SOLANA_FEE_PAYER_ADDRESS is derived from SOLANA_FEE_PAYER_KEYPAIR; you don't normally need to set it separately.
         "ONE_TIME_WALLETS_ENCRYPTION_ENABLED": True, # Enables encryption for one-time payments wallets
         "ONE_TIME_WALLETS_ENCRYPTION_KEY": "ONE_TIME_WALLETS_ENCRYPTION_KEY",
         "SOLANA_PAYMENT_MODEL": "payments.CustomSolanaPayment", # Custom model for solana payment
@@ -41,6 +41,7 @@ A Django library for integrating Solana payments into your project. This library
         "RPC_CALLS_COMMITMENT": "Confirmed", # RPC Commitment
         "PAYMENT_ACCEPTANCE_COMMITMENT": "Confirmed", # Commitment for payment acceptance
         "MAX_ATAS_PER_TX": 8, # Max associated token accounts to create/close per transaction
+        "PAYMENT_VALIDITY_SECONDS": 30 * 60, # Payment validity window in seconds (default: 30 minutes)
     }
     ```
 

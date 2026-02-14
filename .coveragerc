@@ -1,0 +1,16 @@
+[run]
+branch = True
+source = django_solana_payments
+omit =
+    django_solana_payments/migrations/*
+    django_solana_payments/*/test_*.py
+    django_solana_payments/admin.py
+    django_solana_payments/urls.py
+
+    manage.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if settings.DEBUG
+    raise NotImplementedError

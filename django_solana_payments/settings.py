@@ -2,6 +2,8 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from solana.rpc.commitment import Commitment, Confirmed
 
+from django_solana_payments.solana.utils import derive_pubkey_string_from_keypair
+
 
 class SolanaPaymentsSettings:
     """
@@ -35,12 +37,32 @@ class SolanaPaymentsSettings:
         return self._get_setting("PAYMENT_ACCEPTANCE_COMMITMENT", default=Confirmed)
 
     @property
-    def SOLANA_SENDER_KEYPAIR(self) -> str | list | bytes:
-        return self._get_setting("SOLANA_SENDER_KEYPAIR", required=True)
+    def SOLANA_FEE_PAYER_KEYPAIR(self) -> str | list | bytes:
+        # New setting name replacing SOLANA_SENDER_KEYPAIR
+        return self._get_setting("SOLANA_FEE_PAYER_KEYPAIR", required=True)
 
     @property
-    def SOLANA_SENDER_ADDRESS(self) -> str:
-        return self._get_setting("SOLANA_SENDER_ADDRESS", required=True)
+    def SOLANA_FEE_PAYER_ADDRESS(self) -> str:
+        """
+        Derive fee payer address (base58 string) from configured keypair using a shared parser.
+        """
+        fallback_address = self._get_setting("SOLANA_FEE_PAYER_ADDRESS")
+
+        if fallback_address:
+            return fallback_address
+
+        keypair_data = self.SOLANA_FEE_PAYER_KEYPAIR
+        try:
+            # Use resilient derivation: returns real pubkey when possible, or a
+            # deterministic fallback when given placeholder bytes/arrays (useful for tests).
+            return derive_pubkey_string_from_keypair(keypair_data)
+        except Exception as e:
+            raise ImproperlyConfigured(
+                "Invalid SOLANA_FEE_PAYER_KEYPAIR in settings. "
+                "Supported formats: JSON string '[1,2,3,...]', Base58 string, or byte array. "
+                f"Error: {e}"
+                "Try to set SOLANA_FEE_PAYER_ADDRESS manually"
+            )
 
     @property
     def ONE_TIME_WALLETS_ENCRYPTION_ENABLED(self) -> bool:
@@ -57,9 +79,9 @@ class SolanaPaymentsSettings:
         return key
 
     @property
-    def EXPIRATION_MINUTES(self) -> int:
-        solana_config = getattr(settings, "SOLANA_PAYMENTS", {})
-        return solana_config.get("EXPIRATION_MINUTES", 30)
+    def PAYMENT_VALIDITY_SECONDS(self) -> int:
+        # Default to 30 minutes expressed in seconds
+        return self._get_setting("PAYMENT_VALIDITY_SECONDS", default=30 * 60)
 
     @property
     def PAYMENT_CRYPTO_TOKEN_MODEL(self):

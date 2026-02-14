@@ -12,6 +12,7 @@ from spl.token.constants import NATIVE_DECIMALS
 
 from django_solana_payments.settings import solana_payments_settings
 from django_solana_payments.solana.dtos import ConfirmTransactionDTO
+from django_solana_payments.solana.utils import parse_keypair
 
 solana_client_logger = logging.getLogger(__name__)
 
@@ -41,26 +42,14 @@ class BaseSolanaClient:
         - Base58 string: "5J3mBbAH58CpQ3Y2S4t7f..."
         - Byte array: [1,2,3,...,64]
         """
-        keypair_data = solana_payments_settings.SOLANA_SENDER_KEYPAIR
+        keypair_data = solana_payments_settings.SOLANA_FEE_PAYER_KEYPAIR
 
         try:
-            # Try JSON format first
-            if isinstance(keypair_data, str):
-                # Check if it's a JSON array string
-                if keypair_data.strip().startswith("["):
-                    return Keypair.from_json(keypair_data)
-                # Otherwise assume it's base58
-                else:
-                    return Keypair.from_base58_string(keypair_data)
-            # If it's a list/array
-            elif isinstance(keypair_data, (list, bytes)):
-                return Keypair.from_bytes(bytes(keypair_data))
-            else:
-                raise ValueError(f"Unsupported keypair format: {type(keypair_data)}")
+            return parse_keypair(keypair_data)
         except (ValueError, AttributeError, TypeError) as e:
-            solana_client_logger.error(f"Invalid SOLANA_SENDER_KEYPAIR: {e}")
+            solana_client_logger.error(f"Invalid SOLANA_FEE_PAYER_KEYPAIR: {e}")
             raise ValueError(
-                "Invalid SOLANA_SENDER_KEYPAIR in settings. "
+                "Invalid SOLANA_FEE_PAYER_KEYPAIR in settings. "
                 "Supported formats: JSON string '[1,2,3,...]', Base58 string, or byte array. "
                 f"Error: {e}"
             )

@@ -36,15 +36,18 @@ def handle_payment_accepted(
         transaction_status: The transaction status (CONFIRMED or FINALIZED)
         **kwargs: Additional keyword arguments
     """
+    payment_user = getattr(payment, "user", None)
+    payment_label = getattr(payment, "label", None)
+
     logger.info(
         f"Payment accepted! Payment ID: {payment.id}, "
         f"Address: {payment.payment_address}, "
         f"Status: {transaction_status}, "
-        f"User: {payment.user}"
+        f"User: {payment_user if payment_user else ''}"
     )
 
     # Example 1: Send email notification
-    if payment.user and payment.user.email:
+    if payment_user and getattr(payment_user, "email", None):
         send_payment_confirmation_email(payment)
 
     # Example 2: Update related order status
@@ -52,8 +55,8 @@ def handle_payment_accepted(
         update_order_status(payment.meta_data["order_id"], "paid")
 
     # Example 3: Grant premium access
-    if payment.label == "Premium Subscription":
-        grant_premium_access(payment.user)
+    if payment_label == "Premium Subscription":
+        grant_premium_access(payment_user)
 
     # Example 4: Log to analytics
     log_payment_to_analytics(payment, transaction_status)
@@ -66,7 +69,11 @@ def send_payment_confirmation_email(payment):
     In a real application, you would use Django's email backend or
     a service like SendGrid, Mailgun, etc.
     """
-    logger.info(f"Sending confirmation email to {payment.user.email}")
+    payment_user = getattr(payment, "user", None)
+    if not payment_user or not getattr(payment_user, "email", None):
+        return
+
+    logger.info(f"Sending confirmation email to {payment_user.email}")
 
     # Example implementation:
     # from django.core.mail import send_mail
@@ -74,7 +81,7 @@ def send_payment_confirmation_email(payment):
     #     subject=f'Payment Confirmed - {payment.label}',
     #     message=f'Your payment of {payment.amount} has been confirmed.',
     #     from_email='noreply@yourapp.com',
-    #     recipient_list=[payment.user.email],
+    #     recipient_list=[payment_user.email],
     # )
 
 

@@ -56,7 +56,9 @@ class SolanaPayPaymentCryptoPriceInline(admin.TabularInline):
 class SolanaPayPaymentAdmin(admin.ModelAdmin):
     def __init__(self, model, admin_site):
         self.autocomplete_fields = [
-            field.name for field in model._meta.fields if field.name in ["user"]
+            field.name
+            for field in model._meta.fields
+            if field.name in ["user", "crypto_prices", "paid_token"]
         ]
         self.list_display = [
             field.name

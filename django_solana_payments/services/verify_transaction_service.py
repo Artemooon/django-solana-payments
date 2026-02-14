@@ -308,10 +308,10 @@ class VerifyTransactionService:
             )
             if fee_payer:
                 if fee_payer == Pubkey.from_string(
-                    solana_payments_settings.SOLANA_SENDER_ADDRESS
+                    solana_payments_settings.SOLANA_FEE_PAYER_ADDRESS
                 ):
                     logger.warning(
-                        f"Ignoring transaction {tx.value.transaction.transaction.signatures} because fee payer is SOLANA_SENDER_ADDRESS"
+                        f"Ignoring transaction {tx.value.transaction.transaction.signatures} because fee payer is SOLANA_FEE_PAYER_ADDRESS"
                     )
                 else:
                     recipient_wallet_transactions.append(tx)

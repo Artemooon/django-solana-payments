@@ -21,15 +21,17 @@ How It Works
 
 At its core, `django-solana-payments` works by creating a unique, one-time Solana wallet (keypairs) for each payment you want to receive.
 
-For this reason you need to have some SOL balance on your `SOLANA_SENDER_KEYPAIR` wallet to pay transactions fess. Usually the cost is equals 0.000005 SOL which is default price to sign a transaction
+For this reason you need to have some SOL balance on your `SOLANA_FEE_PAYER_KEYPAIR` wallet to pay transactions fess. Usually the cost is equals 0.000005 SOL which is default price to sign a transaction
 
 These wallets metadata are stored in your database (with optional encryption for security) and are linked to a specific payment record.
 
 When a customer makes a payment, the library monitors the Solana blockchain for transactions sent to that unique wallet.
 
-By checking the balance and transaction history of this one-time wallet, the library can reliably verify when the correct amount has been paid and confirm the payment's status, all without needing to manage complex webhook systems.
+By checking the balance and transaction history of this one-time wallet, the library can reliably verify when the correct amount has been paid and confirm the payment's status.
 
-When you use non native tokens for payments library automatically creates `associated token address <https://www.solana-program.com/docs/associated-token-account>`_ which requires
+When you use non native tokens for payments library automatically creates `associated token address <https://www.solana-program.com/docs/associated-token-account>`_ which requires SOL for transactions fees (see details in Fees and chain costs section).
+
+Payments have a validity period; after the time specified in the settings using PAYMENT_VALIDITY_SECONDS attribute, the payment status will expire and the payment will not be processed.
 
 Fees and chain costs
 ------------
@@ -58,6 +60,7 @@ If you discover any additional ways to optimize costs, please let us know.
    :caption: Contents:
 
    installation
+   payment_tokens
    custom_models
    payment_hooks
    api_reference
