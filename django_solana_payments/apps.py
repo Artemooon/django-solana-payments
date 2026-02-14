@@ -11,5 +11,5 @@ class SolanaPayConfig(AppConfig):
         from .settings import solana_payments_settings
 
         # Trigger the property check to ensure RPC_URL exists
-        _ = solana_payments_settings.SOLANA_RPC_URL
-        _ = solana_payments_settings.SOLANA_RECEIVER_ADDRESS
+        _ = solana_payments_settings.RPC_URL
+        _ = solana_payments_settings.RECEIVER_ADDRESS

@@ -72,7 +72,7 @@ def send_transaction_and_update_one_time_wallet(
         if should_close_spl_one_time_wallets_atas:
             one_time_wallet_service.close_one_time_wallet_atas(
                 one_time_wallet,
-                Pubkey.from_string(solana_payments_settings.SOLANA_FEE_PAYER_ADDRESS),
+                Pubkey.from_string(solana_payments_settings.FEE_PAYER_ADDRESS),
             )
     else:
         state = OneTimeWalletStateTypes.FAILED_TO_SEND_FUNDS

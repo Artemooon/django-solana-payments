@@ -48,7 +48,7 @@ class SolanaTokenClient:
         self,
         wallet_address: Pubkey,
         token_mint_address: Pubkey,
-        commitment: Commitment = solana_payments_settings.RPC_CALLS_COMMITMENT,
+        commitment: Commitment = solana_payments_settings.RPC_COMMITMENT,
     ) -> Pubkey:
         mint_info = self.base_solana_client.http_client.get_account_info(
             token_mint_address, commitment=commitment
@@ -72,7 +72,7 @@ class SolanaTokenClient:
         self,
         recipient: Pubkey,
         mints: list[Pubkey],
-        commitment: Commitment = solana_payments_settings.RPC_CALLS_COMMITMENT,
+        commitment: Commitment = solana_payments_settings.RPC_COMMITMENT,
     ) -> Signature:
         """
         Creates and sends transactions to close all specified token accounts.
@@ -121,7 +121,7 @@ class SolanaTokenClient:
         accounts_to_close: list[Pubkey],
         destination_pubkey: Pubkey,
         ata_program_id: Pubkey | None = None,
-        commitment: Commitment = solana_payments_settings.RPC_CALLS_COMMITMENT,
+        commitment: Commitment = solana_payments_settings.RPC_COMMITMENT,
     ) -> bool:
         """
         Creates and sends transactions to close all specified token accounts.

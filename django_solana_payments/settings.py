@@ -21,47 +21,47 @@ class SolanaPaymentsSettings:
         return value
 
     @property
-    def SOLANA_RPC_URL(self) -> str:
-        return self._get_setting("SOLANA_RPC_URL", required=True)
+    def RPC_URL(self) -> str:
+        return self._get_setting("RPC_URL", required=True)
 
     @property
-    def SOLANA_RECEIVER_ADDRESS(self) -> str:
-        return self._get_setting("SOLANA_RECEIVER_ADDRESS", required=True)
+    def RECEIVER_ADDRESS(self) -> str:
+        return self._get_setting("RECEIVER_ADDRESS", required=True)
 
     @property
-    def RPC_CALLS_COMMITMENT(self) -> Commitment:
-        return self._get_setting("RPC_CALLS_COMMITMENT", default=Confirmed)
+    def RPC_COMMITMENT(self) -> Commitment:
+        return self._get_setting("RPC_COMMITMENT", default=Confirmed)
 
     @property
     def PAYMENT_ACCEPTANCE_COMMITMENT(self) -> Commitment:
         return self._get_setting("PAYMENT_ACCEPTANCE_COMMITMENT", default=Confirmed)
 
     @property
-    def SOLANA_FEE_PAYER_KEYPAIR(self) -> str | list | bytes:
+    def FEE_PAYER_KEYPAIR(self) -> str | list | bytes:
         # New setting name replacing SOLANA_SENDER_KEYPAIR
-        return self._get_setting("SOLANA_FEE_PAYER_KEYPAIR", required=True)
+        return self._get_setting("FEE_PAYER_KEYPAIR", required=True)
 
     @property
-    def SOLANA_FEE_PAYER_ADDRESS(self) -> str:
+    def FEE_PAYER_ADDRESS(self) -> str:
         """
         Derive fee payer address (base58 string) from configured keypair using a shared parser.
         """
-        fallback_address = self._get_setting("SOLANA_FEE_PAYER_ADDRESS")
+        fallback_address = self._get_setting("FEE_PAYER_ADDRESS")
 
         if fallback_address:
             return fallback_address
 
-        keypair_data = self.SOLANA_FEE_PAYER_KEYPAIR
+        keypair_data = self.FEE_PAYER_KEYPAIR
         try:
             # Use resilient derivation: returns real pubkey when possible, or a
             # deterministic fallback when given placeholder bytes/arrays (useful for tests).
             return derive_pubkey_string_from_keypair(keypair_data)
         except Exception as e:
             raise ImproperlyConfigured(
-                "Invalid SOLANA_FEE_PAYER_KEYPAIR in settings. "
+                "Invalid FEE_PAYER_KEYPAIR in settings. "
                 "Supported formats: JSON string '[1,2,3,...]', Base58 string, or byte array. "
                 f"Error: {e}"
-                "Try to set SOLANA_FEE_PAYER_ADDRESS manually"
+                "Try to set FEE_PAYER_ADDRESS manually"
             )
 
     @property

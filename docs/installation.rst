@@ -13,7 +13,7 @@ Installation
 
     .. code-block:: bash
 
-        pip install django-solana-payments[drf]
+        pip install "django-solana-payments[drf]"
 
 2.  **Configure `settings.py`**
 
@@ -27,13 +27,13 @@ Installation
         SOLANA_PAYMENTS = {
             "RPC_URL": "https://api.mainnet-beta.solana.com",
             "RECEIVER_ADDRESS": "YOUR_WALLET_ADDRESS", # Wallet that receives funds
-            "SOLANA_FEE_PAYER_KEYPAIR": "WALLET_KEYPAIR", # Wallet keypair that pays network fees (address is derived from keypair)
-            # SOLANA_FEE_PAYER_ADDRESS is derived from the keypair and doesn't need to be set separately
+            "FEE_PAYER_KEYPAIR": "WALLET_KEYPAIR", # Wallet keypair that pays network fees (address is derived from keypair)
+            # FEE_PAYER_ADDRESS is derived from the keypair and doesn't need to be set separately
             "ONE_TIME_WALLETS_ENCRYPTION_ENABLED": True, # Enables encryption for one-time payments wallets
-            "ONE_TIME_WALLETS_ENCRYPTION_KEY": "ONE_TIME_WALLETS_ENCRYPTION_KEY",
+            "ONE_TIME_WALLETS_ENCRYPTION_KEY": "ONE_TIME_WALLETS_ENCRYPTION_KEY", # Generate with the Fernet.generate_key()
             "SOLANA_PAYMENT_MODEL": "payments.CustomSolanaPayment", # Custom model for solana payment
             "PAYMENT_CRYPTO_TOKEN_MODEL": "payments.CustomPaymentToken", # Custom model for solana payment token
-            "RPC_CALLS_COMMITMENT": "Confirmed", # RPC Commitment
+            "RPC_COMMITMENT": "Confirmed", # RPC Commitment
             "PAYMENT_ACCEPTANCE_COMMITMENT": "Confirmed", # Commitment for payment acceptance
             "MAX_ATAS_PER_TX": 8, # Max associated token accounts to create/close per transaction
             "PAYMENT_VALIDITY_SECONDS": 30 * 60, # Payment validity window in seconds (default: 30 minutes)

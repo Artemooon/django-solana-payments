@@ -25,7 +25,7 @@ See the full documentation at https://django-solana-payments.readthedocs.io/
 
     For DRF support, which provides API endpoints for creating and managing payments, install the `drf` extra:
     ```bash
-    pip install django-solana-payments[drf]
+    pip install "django-solana-payments[drf]"
     ```
     This provides ready-to-use API endpoints for creating and managing payments.
 
@@ -39,15 +39,15 @@ See the full documentation at https://django-solana-payments.readthedocs.io/
     SOLANA_PAYMENTS = {
         "RPC_URL": "https://api.mainnet-beta.solana.com",
         "RECEIVER_ADDRESS": "YOUR_WALLET_ADDRESS", # Wallet that receives funds
-        "SOLANA_FEE_PAYER_KEYPAIR": "WALLET_KEYPAIR", # Wallet keypair that pays network fees (address will be derived from the keypair)
-        # SOLANA_FEE_PAYER_ADDRESS is derived from SOLANA_FEE_PAYER_KEYPAIR; you don't normally need to set it separately.
+        "FEE_PAYER_KEYPAIR": "WALLET_KEYPAIR", # Wallet keypair that pays network fees (address will be derived from the keypair)
+        # FEE_PAYER_ADDRESS is derived from FEE_PAYER_KEYPAIR; you don't normally need to set it separately.
         "ONE_TIME_WALLETS_ENCRYPTION_ENABLED": True, # Enables encryption for one-time payments wallets
-        "ONE_TIME_WALLETS_ENCRYPTION_KEY": "ONE_TIME_WALLETS_ENCRYPTION_KEY",
+        "ONE_TIME_WALLETS_ENCRYPTION_KEY": "ONE_TIME_WALLETS_ENCRYPTION_KEY", # Generate with the Fernet.generate_key()
         "SOLANA_PAYMENT_MODEL": "payments.CustomSolanaPayment", # Custom model for solana payment
         "PAYMENT_CRYPTO_TOKEN_MODEL": "payments.CustomPaymentToken", # Custom model for solana payment token
-        "RPC_CALLS_COMMITMENT": "Confirmed", # RPC Commitment
+        "RPC_COMMITMENT": "Confirmed", # RPC Commitment
         "PAYMENT_ACCEPTANCE_COMMITMENT": "Confirmed", # Commitment for payment acceptance
-        "MAX_ATAS_PER_TX": 8, # Max associated token accounts to create/close per transaction
+        "MAX_ATAS_PER_TX": 8, # Max associated token accounts to create/close per transaction (needed for oen time wallets creation)
         "PAYMENT_VALIDITY_SECONDS": 30 * 60, # Payment validity window in seconds (default: 30 minutes)
     }
     ```

@@ -23,14 +23,14 @@ class BaseSolanaClient:
         self._rpc_url = self._build_rpc_url(rpc_url)
         self._http_client = Client(
             endpoint=self._rpc_url,
-            commitment=solana_payments_settings.RPC_CALLS_COMMITMENT,
+            commitment=solana_payments_settings.RPC_COMMITMENT,
         )
         self.LAMPORTS_PER_SOL = 10**NATIVE_DECIMALS
 
     @staticmethod
     def _build_rpc_url(rpc_url: str | None) -> str:
         """Builds Solana RPC endpoint URL with provided rpc_url parameter if needed."""
-        final_url = rpc_url or solana_payments_settings.SOLANA_RPC_URL
+        final_url = rpc_url or solana_payments_settings.RPC_URL
 
         return final_url
 
@@ -42,14 +42,14 @@ class BaseSolanaClient:
         - Base58 string: "5J3mBbAH58CpQ3Y2S4t7f..."
         - Byte array: [1,2,3,...,64]
         """
-        keypair_data = solana_payments_settings.SOLANA_FEE_PAYER_KEYPAIR
+        keypair_data = solana_payments_settings.FEE_PAYER_KEYPAIR
 
         try:
             return parse_keypair(keypair_data)
         except (ValueError, AttributeError, TypeError) as e:
-            solana_client_logger.error(f"Invalid SOLANA_FEE_PAYER_KEYPAIR: {e}")
+            solana_client_logger.error(f"Invalid FEE_PAYER_KEYPAIR: {e}")
             raise ValueError(
-                "Invalid SOLANA_FEE_PAYER_KEYPAIR in settings. "
+                "Invalid FEE_PAYER_KEYPAIR in settings. "
                 "Supported formats: JSON string '[1,2,3,...]', Base58 string, or byte array. "
                 f"Error: {e}"
             )
@@ -62,10 +62,12 @@ class BaseSolanaClient:
         return Keypair()
 
     def confirm_transaction(
-        self, tx_signature: Signature, commitment: Commitment = None
+        self,
+        tx_signature: Signature,
+        commitment: Commitment = solana_payments_settings.RPC_COMMITMENT,
     ) -> ConfirmTransactionDTO | None:
         if commitment is None:
-            commitment = solana_payments_settings.RPC_CALLS_COMMITMENT
+            commitment = solana_payments_settings.RPC_COMMITMENT
 
         transaction_confirmation = self.http_client.confirm_transaction(
             tx_signature, commitment=commitment

@@ -28,11 +28,11 @@ How It Works
 
 At its core, `django-solana-payments` works by creating a unique, one-time Solana wallet (keypairs) for each payment you want to receive.
 
-For this reason you need to have some SOL balance on your `SOLANA_FEE_PAYER_KEYPAIR` wallet to pay transactions fess. Usually the cost is equals 0.000005 SOL which is default price to sign a transaction
+For this reason you need to have some SOL balance on your `FEE_PAYER_KEYPAIR` wallet to pay transactions fess. Usually the cost is equals 0.000005 SOL which is default price to sign a transaction
 
-These wallets metadata are stored in your database (with optional encryption for security) and are linked to a specific payment record.
+These wallets metadata are stored in your database (with optional encryption for security, see :ref:`one_time_wallets_encryption`) and are linked to a specific payment record.
 
-When a customer makes a payment, the library monitors the Solana blockchain for transactions sent to that unique wallet.
+When a customer makes a payment, the library monitors the Solana blockchain for transactions sent to that unique one-time wallet.
 
 By checking the balance and transaction history of this one-time wallet, the library can reliably verify when the correct amount has been paid and confirm the payment's status.
 
@@ -72,6 +72,7 @@ If you discover any additional ways to optimize costs, please let us know.
    custom_models
    payment_hooks
    management_commands
+   one_time_wallets_encryption
    api_reference
 
 

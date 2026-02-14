@@ -231,7 +231,7 @@ class OneTimeWalletService:
         wallets = list(target_wallets)
         closed_wallets_ids = []
         recipient_address_pubkey = Pubkey.from_string(
-            solana_payments_settings.SOLANA_FEE_PAYER_ADDRESS
+            solana_payments_settings.FEE_PAYER_ADDRESS
         )
 
         for wallet in wallets:

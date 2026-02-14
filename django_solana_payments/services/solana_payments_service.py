@@ -113,7 +113,7 @@ class SolanaPaymentsService:
         for wallet in one_time_wallets_with_balance:
             wallet_keypair = one_time_wallet_service.load_keypair(wallet.keypair_json)
             wallet_address = wallet_keypair.pubkey()
-            recipient_address = solana_payments_settings.SOLANA_RECEIVER_ADDRESS
+            recipient_address = solana_payments_settings.RECEIVER_ADDRESS
 
             if sleep_interval_seconds:
                 time.sleep(sleep_interval_seconds)  # To prevent rate limiting

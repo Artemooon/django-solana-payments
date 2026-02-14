@@ -85,9 +85,7 @@ def test_send_transaction_and_update_wallet_marks_sent_on_confirmed(
     one_time_wallet,
     settings,
 ):
-    settings.SOLANA_PAYMENTS = {
-        "SOLANA_FEE_PAYER_ADDRESS": "11111111111111111111111111111111"
-    }
+    settings.SOLANA_PAYMENTS = {"FEE_PAYER_ADDRESS": "11111111111111111111111111111111"}
 
     mock_load_keypair.return_value = Keypair()
     signature = Signature.from_bytes(bytes([1] * 64))

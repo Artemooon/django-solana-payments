@@ -31,7 +31,7 @@ class SolanaTransactionQueryClient:
         self,
         address: Pubkey,
         limit: Optional[int] = 2,
-        commitment: Commitment = solana_payments_settings.RPC_CALLS_COMMITMENT,
+        commitment: Commitment = solana_payments_settings.RPC_COMMITMENT,
     ) -> list[GetTransactionResp]:
         tx_signatures = self.base_solana_client.http_client.get_signatures_for_address(
             address, limit=limit, commitment=commitment
