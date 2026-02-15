@@ -1,10 +1,15 @@
 import os
+import re
 import sys
+from pathlib import Path
 
 sys.path.insert(0, os.path.abspath(".."))
 
 # Required for autodoc modules that import Django models/settings.
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_solana_payments.tests.settings")
+
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as get_version
 
 import django  # noqa: E402
 
@@ -16,6 +21,23 @@ django.setup()
 project = "django-solana-payments"
 copyright = "2026, Artemooon"
 author = "Artemooon"
+
+
+def _version_from_pyproject() -> str:
+    pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+    content = pyproject.read_text(encoding="utf-8")
+    match = re.search(r'(?m)^version\s*=\s*"([^"]+)"\s*$', content)
+    if not match:
+        raise RuntimeError("Could not find project version in pyproject.toml")
+    return match.group(1)
+
+
+try:
+    release = get_version("django-solana-payments")
+except PackageNotFoundError:
+    release = _version_from_pyproject()
+
+version = ".".join(release.split(".")[:2])
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

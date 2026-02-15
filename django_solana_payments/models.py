@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import CheckConstraint, Q
+from solders.pubkey import Pubkey
 from solders.solders import Keypair
 
 from django_solana_payments.choices import (
@@ -35,8 +36,7 @@ class AbstractPaymentToken(models.Model):
     )
 
     payment_crypto_price = models.DecimalField(
-        max_digits=30,
-        decimal_places=18,
+        max_digits=30, decimal_places=18, help_text="Payment price in cryptocurrency"
     )
 
     created = models.DateTimeField(auto_now_add=True)
@@ -53,8 +53,21 @@ class AbstractPaymentToken(models.Model):
         if self.token_type == TokenTypes.SPL and not self.mint_address:
             raise ValidationError("mint_address is required for SPL tokens")
 
+        if self.token_type == TokenTypes.SPL and self.mint_address:
+            try:
+                Pubkey.from_string(self.mint_address)
+            except Exception as exc:
+                raise ValidationError(
+                    "mint_address must be a valid Solana address"
+                ) from exc
+
         if self.token_type == TokenTypes.NATIVE and self.mint_address:
             raise ValidationError("mint_address must be null for native SOL")
+
+    def save(self, *args, **kwargs):
+        # Enforce model validation for shell/CLI/direct save() usage.
+        self.full_clean()
+        return super().save(*args, **kwargs)
 
 
 class AbstractSolanaPayment(models.Model):

@@ -66,6 +66,24 @@ urlpatterns = [
 
 Open the admin panel and create payment token records, specifying the correct mint addresses for SPL tokens.
 
+## Integration in 3 simple steps
+
+Start accepting Solana payments with a fast, production-ready flow designed for real checkout UX.
+
+### Integration flow
+
+Typical API flow:
+
+1. Call `POST /solana-payments/initiate/` to create a payment and receive `payment_address`.
+2. Show that address/QR code to the payer, then the payer sends funds to the `payment_address`.
+3. Poll `GET /solana-payments/verify-transfer/{payment_address}?token_type=...` until status becomes `confirmed` or `finalized`.
+
+Common UI examples:
+
+- Connect crypto wallet -> show payment summary in the wallet extension -> user signs and sends transaction -> app checks payment status.
+- Open wallet app (Phantom/Solflare/mobile wallet) -> scan the QR code -> send expected amount -> return to your app -> app payment checks status.
+
+Optionally call `GET /solana-payments/payments/{payment_address}/` for details.
 
 ## Running the Example Project
 
