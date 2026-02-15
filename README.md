@@ -133,3 +133,51 @@ This package is licensed under the MIT License. See the LICENSE file for more de
 Contributions are welcome. If you encounter a bug, have a feature request, or see an opportunity for improvement, please open an issue to discuss it. Pull requests are also welcome.
 
 If you find this project useful, consider giving it a star to support its development!
+
+## Developer Guide
+
+### Local setup
+
+1. Clone the repository and create a virtual environment:
+
+   ```bash
+   git clone https://github.com/Artemooon/django-solana-payments.git
+   cd django-solana-payments
+   python -m venv .venv
+   source .venv/bin/activate
+   ```
+
+2. Install development dependencies:
+
+   ```bash
+   pip install -e ".[dev,docs,drf]"
+   ```
+
+3. Run tests:
+
+   ```bash
+   pytest
+   ```
+
+### Install pre-commit
+
+Install and enable git hooks:
+
+```bash
+pip install pre-commit # (if not installed)
+pre-commit install
+```
+
+### Release process
+
+1. Bump version in `pyproject.toml`.
+2. Commit and tag:
+
+   ```bash
+   git add -A
+   git commit -m "Release x.y.z"
+   git tag vx.y.z
+   git push origin main --tags
+   ```
+
+The GitHub `Release` workflow publish automatically on pushed tags.
