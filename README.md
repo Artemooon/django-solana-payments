@@ -1,6 +1,8 @@
 # Django Solana Payments
 
 ![Documentation Status](https://app.readthedocs.org/projects/django-solana-payments/badge/?version=latest)
+[![Coverage Status](https://coveralls.io/repos/github/Artemooon/django-solana-payments/badge.svg?branch=main)](https://coveralls.io/github/Artemooon/django-solana-payments?branch=main)
+[![Latest on Django Packages](https://img.shields.io/badge/PyPI-{{ package.slug }}-tags-8c3c26.svg)](https://djangopackages.org/packages/p/django-solana-payments/)
 [![PyPI version](https://badge.fury.io/py/django-solana-payments.svg)](https://badge.fury.io/py/django-solana-payments)
 [![Python versions](https://img.shields.io/pypi/pyversions/django-solana-payments.svg)]( https://pypi.python.org/pypi/django-solana-payments)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Artemooon/django-solana-payments/blob/main/LICENSE)
@@ -9,6 +11,7 @@ A Django library for integrating Solana payments into your project. This library
 
 ## Key Features
 
+-   **Transaction verification and automatic payment confirmation**: Monitors the Solana blockchain, verifies incoming transactions, and automatically confirms payments when the expected amount is received.
 -   **Flexibility and customization**: Use your own custom models for payments and tokens to fit your project's needs. Add custom logic using signals or callabacks.
 -   **Ease of integration**: Provides ready-to-use endpoints that can be used in existing DRF applications, or ready-to-use methods for Django applications that are not part of DRF.
 -   **Security and encryption**: Provides an out-of-the-box encryption mechanism that helps keep one-time payment wallets secure.
