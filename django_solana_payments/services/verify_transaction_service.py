@@ -67,6 +67,37 @@ class VerifyTransactionService:
         send_payment_accepted_signal: bool = True,
         on_success: callable = None,
     ) -> SolanaPaymentStatusTypes:
+        """
+        Verify a payment transaction for a one-time wallet and process the payment lifecycle.
+
+        1. Load payment by ``payment_address`` and mark its one-time wallet as
+           ``PROCESSING_PAYMENT``.
+        2. Validate payment state (already confirmed/finalized, expired, etc.).
+        3. Validate on-chain balance and related transfer transactions for the selected token.
+        4. If a valid recipient transaction is found, accept it, update payment status/signature,
+           and optionally forward funds to the main wallet.
+        5. Optionally emit ``solana_payment_accepted`` signal and execute ``on_success`` callback.
+
+        Args:
+            payment_address: One-time payment wallet address created for this payment.
+            payment_crypto_token: Active token model instance used for verification
+                (native SOL or SPL token).
+            meta_data: Optional metadata to persist on payment update after successful verification.
+            send_payment_accepted_signal: Whether to emit ``solana_payment_accepted`` on success.
+            on_success: Optional callback called as ``on_success(solana_payment, transaction_status)``
+                after successful payment processing.
+
+        Returns:
+            A value from ``SolanaPaymentStatusTypes`` representing the current or updated payment status.
+            Returns ``INITIATED`` when no qualifying recipient transactions are found yet.
+
+        Raises:
+            PaymentNotFoundError: If payment with the provided address does not exist.
+            PaymentExpiredError: If payment expired before verification.
+            PaymentTokenPriceNotFoundError: If expected token price row for this payment is missing.
+            InvalidPaymentAmountError: If a transfer exists but amount is below expected value.
+            PaymentNotConfirmedError: If the transfer did not reach configured commitment level.
+        """
         logger.info(
             f"Starting verification for payment_address={payment_address}, and token: {payment_crypto_token.mint_address}"
         )

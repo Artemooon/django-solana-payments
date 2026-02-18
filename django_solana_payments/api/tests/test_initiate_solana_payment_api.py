@@ -4,6 +4,7 @@ from rest_framework.test import APIClient
 
 from django_solana_payments.choices import SolanaPaymentStatusTypes
 from django_solana_payments.helpers import get_solana_payment_model
+from django_solana_payments.models import PaymentCryptoToken
 
 pytestmark = pytest.mark.django_db
 
@@ -75,3 +76,15 @@ def test_initiate_payment_invalid_user_id_returns_400(api_client, payment_token)
 
     assert response.status_code == 400
     assert "user" in response.data
+
+
+def test_initiate_payment_without_active_tokens_returns_400(api_client):
+    PaymentCryptoToken.objects.all().delete()
+
+    response = api_client.post("/initiate/", data={}, format="json")
+
+    assert response.status_code == 400
+    assert (
+        response.data["detail"]
+        == "No active payment tokens found. Please configure at least one active payment token in AllowedPaymentCryptoToken before creating a payment."
+    )

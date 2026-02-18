@@ -52,7 +52,16 @@ Installation
             path('solana-payments/', include('django_solana_payments.urls')),
         ]
 
-    Open the admin panel and create payment token records, specifying the correct mint addresses for SPL tokens.
+4.  **Create payment tokens (required)**
+
+    Open the admin panel and create at least one active payment token before initiating payments.
+    A common setup is:
+
+    - Native SOL token (`token_type=NATIVE`, `mint_address` empty)
+    - USDC SPL token (`token_type=SPL`, with the correct USDC mint for your network)
+
     See :ref:`payment_tokens` for model fields, validation rules, and examples.
 
-    After routing, see :ref:`api_usage` for endpoint details and request examples.
+5.  **Continue with API usage**
+
+    See :ref:`api_usage` for endpoint details and request examples.
