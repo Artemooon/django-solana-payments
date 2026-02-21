@@ -21,7 +21,8 @@ Key Features
 Security Note
 -------------
 
-`django-solana-payments` does not read or exfiltrate your provided wallet keypairs and has no external access to your secret keys or funds.
+`django-solana-payments` does not exfiltrate your provided wallet keypairs and has no external access to your secret keys or funds.
+`django-solana-payments` does not send your wallet keypairs or secret keys to any third-party services.
 All wallet security controls, key management, maintenance policies, and security audits remain the responsibility of the user-facing application and its infrastructure.
 See the full `Disclaimer <https://github.com/Artemooon/django-solana-payments/blob/main/DISCLAIMER.md>`_.
 
@@ -71,6 +72,7 @@ If you discover any additional ways to optimize costs, please let us know.
    installation
    drf_api_usage
    payment_tokens
+   payment_confirmation_statuses
    custom_models
    payment_hooks
    management_commands

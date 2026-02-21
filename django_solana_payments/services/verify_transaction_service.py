@@ -1,7 +1,8 @@
 import logging
 from decimal import Decimal
-from typing import Any, Type
+from typing import Any, Callable, Type
 
+from django.db import transaction
 from django.utils import timezone
 from solana.rpc.commitment import Commitment, Confirmed, Finalized, Processed
 from solders.pubkey import Pubkey
@@ -65,7 +66,7 @@ class VerifyTransactionService:
         payment_crypto_token: Type[AbstractPaymentToken],
         meta_data: dict[str, Any] = None,
         send_payment_accepted_signal: bool = True,
-        on_success: callable = None,
+        on_success: Callable | None = None,
     ) -> SolanaPaymentStatusTypes:
         """
         Verify a payment transaction for a one-time wallet and process the payment lifecycle.
@@ -132,26 +133,29 @@ class VerifyTransactionService:
         )
 
         if recipient_wallet_transactions:
-            paid_transaction = recipient_wallet_transactions[0]
+            with transaction.atomic():
+                paid_transaction = recipient_wallet_transactions[0]
 
-            transaction_status = self.accept_verified_transaction_and_process_payment(
-                paid_transaction,
-                payment_balance,
-                payment_crypto_token,
-                solana_payment,
-                meta_data,
-            )
-
-            if send_payment_accepted_signal:
-                solana_payment_accepted.send(
-                    sender=self.__class__,
-                    payment=solana_payment,
-                    transaction_status=transaction_status,
-                    payment_amount=payment_balance,
+                transaction_status = (
+                    self.accept_verified_transaction_and_process_payment(
+                        paid_transaction,
+                        payment_balance,
+                        payment_crypto_token,
+                        solana_payment,
+                        meta_data,
+                    )
                 )
 
-            if on_success:
-                on_success(solana_payment, transaction_status)
+                if send_payment_accepted_signal or on_success:
+                    transaction.on_commit(
+                        lambda: self._run_post_payment_success_hooks(
+                            payment_id=solana_payment.id,
+                            transaction_status=transaction_status,
+                            payment_amount=payment_balance,
+                            send_payment_accepted_signal=send_payment_accepted_signal,
+                            on_success=on_success,
+                        )
+                    )
 
             return transaction_status
 
@@ -160,6 +164,63 @@ class VerifyTransactionService:
                 f"No recipient transactions found for payment_address={payment_address}"
             )
             return SolanaPaymentStatusTypes.INITIATED
+
+    def _run_post_payment_success_hooks(
+        self,
+        payment_id: int,
+        transaction_status: SolanaPaymentStatusTypes,
+        payment_amount: Decimal,
+        send_payment_accepted_signal: bool,
+        on_success: Callable | None,
+    ) -> bool:
+        payment = SolanaPayment.objects.filter(id=payment_id).first()
+        if not payment:
+            logger.warning("Payment %s not found for post-success hooks", payment_id)
+            return False
+
+        signal_ok = True
+        if send_payment_accepted_signal:
+            signal_ok = self._dispatch_payment_accepted_signal(
+                payment=payment,
+                transaction_status=transaction_status,
+                payment_amount=payment_amount,
+            )
+
+        if on_success:
+            try:
+                on_success(payment, transaction_status)
+            except Exception as exc:
+                logger.exception(
+                    "on_success callback failed for payment_id=%s: %s",
+                    payment.id,
+                    exc,
+                )
+        return signal_ok
+
+    def _dispatch_payment_accepted_signal(
+        self,
+        payment: SolanaPayment,
+        transaction_status: SolanaPaymentStatusTypes,
+        payment_amount: Decimal | None,
+    ) -> bool:
+        responses = solana_payment_accepted.send_robust(
+            sender=self.__class__,
+            payment=payment,
+            transaction_status=transaction_status,
+            payment_amount=payment_amount,
+        )
+
+        failed_receivers = [
+            resp for _, resp in responses if isinstance(resp, Exception)
+        ]
+        if failed_receivers:
+            logger.warning(
+                "solana_payment_accepted had %d failing receivers for payment_id=%s",
+                len(failed_receivers),
+                payment.id,
+            )
+            return False
+        return True
 
     def _is_transaction_confirmed(self, transaction: GetTransactionResp) -> bool:
         """
@@ -372,12 +433,15 @@ class VerifyTransactionService:
             transaction_status,
         )
 
-        SolanaPayment.objects.filter(id=solana_payment.id).update(
-            status=transaction_status,
-            signature=signature,
-            paid_token=paid_token,
-            meta_data=meta_data,
-        )
+        update_fields = {
+            "status": transaction_status,
+            "signature": signature,
+            "paid_token": paid_token,
+        }
+        if meta_data:
+            update_fields["meta_data"] = meta_data
+
+        SolanaPayment.objects.filter(id=solana_payment.id).update(**update_fields)
 
         if transaction_status not in {
             SolanaPaymentStatusTypes.CONFIRMED,

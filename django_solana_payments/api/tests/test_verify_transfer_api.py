@@ -89,6 +89,8 @@ def test_verify_transfer_success_returns_status_and_payment_address(
         "status": SolanaPaymentStatusTypes.CONFIRMED,
         "payment_address": solana_payment.payment_address,
     }
+    mock_verify_transaction.assert_called_once()
+    assert mock_verify_transaction.call_args.kwargs["meta_data"] is None
 
 
 def test_verify_transfer_payment_expired_returns_404_and_marks_payment_expired(
@@ -108,15 +110,14 @@ def test_verify_transfer_payment_expired_returns_404_and_marks_payment_expired(
     assert "detail" in response.data
     assert "expired" in str(response.data["detail"]).lower()
 
-    # The view is wrapped in transaction.atomic, so DB updates made before the
-    # exception are rolled back.
+    # Expired status is persisted by service-level flow.
     solana_payment.refresh_from_db()
-    assert solana_payment.status == SolanaPaymentStatusTypes.INITIATED
+    assert solana_payment.status == SolanaPaymentStatusTypes.EXPIRED
 
     wallet = OneTimePaymentWallet.objects.get(
         id=solana_payment.one_time_payment_wallet_id
     )
-    assert wallet.state == OneTimeWalletStateTypes.CREATED
+    assert wallet.state == OneTimeWalletStateTypes.PAYMENT_EXPIRED
 
 
 @patch(

@@ -73,6 +73,40 @@ Example with delay:
 
     python manage.py close_expired_one_time_wallets_and_reclaim_funds --sleep 0.2
 
+4. Recheck Initiated Payments (On-Chain Reconciliation)
+--------------------------------------------------------
+
+**Command:**
+
+.. code-block:: bash
+
+    python manage.py recheck_initiated_solana_payments
+
+What it does:
+
+- Scans payments that are still in `initiated` status.
+- For each payment, checks token options tied to that payment and verifies on-chain wallet activity.
+- If payment is detected as paid, it updates payment status and executes acceptance signal/hooks.
+
+Use this when:
+
+- Customer already paid to the one-time wallet.
+- API/webhook verification flow was missed or delayed.
+- DB remained `initiated` even though payment happened on chain.
+
+Options:
+
+.. code-block:: bash
+
+    --limit <int>   # max initiated payments to scan (default: 200)
+    --sleep <sec>   # optional delay between checks
+
+Example:
+
+.. code-block:: bash
+
+    python manage.py recheck_initiated_solana_payments --limit 500 --sleep 0.1
+
 Recommended operations flow
 ---------------------------
 

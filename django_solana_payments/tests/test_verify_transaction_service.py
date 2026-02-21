@@ -357,24 +357,92 @@ class TestVerifyTransactionAndProcessPayment:
             Pubkey.from_string("2" * 44)
         )
         mock_query_client_class.return_value = mock_query_client
+        mock_signal.send_robust.return_value = []
 
         solana_payment.crypto_prices.add(payment_crypto_price)
 
         service = VerifyTransactionService()
-        service.verify_transaction_and_process_payment(
-            payment_address=solana_payment.payment_address,
-            payment_crypto_token=payment_token,
-            send_payment_accepted_signal=True,
-        )
+        with patch(
+            "django_solana_payments.services.verify_transaction_service.transaction.on_commit",
+            side_effect=lambda fn: fn(),
+        ):
+            service.verify_transaction_and_process_payment(
+                payment_address=solana_payment.payment_address,
+                payment_crypto_token=payment_token,
+                send_payment_accepted_signal=True,
+            )
 
-        # Verify signal was sent
-        mock_signal.send.assert_called_once()
-        call_kwargs = mock_signal.send.call_args[1]
+        # Verify signal was sent with robust dispatch
+        mock_signal.send_robust.assert_called_once()
+        call_kwargs = mock_signal.send_robust.call_args[1]
         assert call_kwargs["payment"] == solana_payment
         assert call_kwargs["transaction_status"] in [
             SolanaPaymentStatusTypes.CONFIRMED,
             SolanaPaymentStatusTypes.FINALIZED,
         ]
+
+    @pytest.mark.django_db
+    @patch(
+        "django_solana_payments.services.verify_transaction_service.solana_payment_accepted"
+    )
+    @patch(
+        "django_solana_payments.services.verify_transaction_service.send_solana_transaction_to_main_wallet"
+    )
+    @patch(
+        "django_solana_payments.services.verify_transaction_service.SolanaBalanceClient"
+    )
+    @patch(
+        "django_solana_payments.services.verify_transaction_service.SolanaTransactionQueryClient"
+    )
+    def test_signal_failure_does_not_break_payment_processing(
+        self,
+        mock_query_client_class,
+        mock_balance_client_class,
+        _mock_send_to_main,
+        mock_signal,
+        solana_payment,
+        payment_token,
+        payment_crypto_price,
+        test_settings,
+        settings,
+    ):
+        settings.SOLANA_PAYMENTS = test_settings
+
+        mock_balance_client = MagicMock()
+        mock_balance_client.get_balance_by_address.return_value = Decimal("0.1")
+        mock_balance_client_class.return_value = mock_balance_client
+
+        mock_query_client = MagicMock()
+        mock_transaction = MagicMock(spec=GetTransactionResp)
+        mock_transaction.value.transaction.transaction.signatures = [
+            Signature.from_string("5" * 88)
+        ]
+        mock_tx_status = MagicMock()
+        mock_tx_status.confirmation_status = TransactionConfirmationStatus.Confirmed
+        mock_query_client.get_signatures_statuses.return_value = [mock_tx_status]
+        mock_query_client.get_transactions_for_address.return_value = [mock_transaction]
+        mock_query_client.extract_fee_payer_from_transaction_details.return_value = (
+            Pubkey.from_string("2" * 44)
+        )
+        mock_query_client_class.return_value = mock_query_client
+
+        mock_signal.send_robust.return_value = [
+            (object(), RuntimeError("receiver failed"))
+        ]
+        solana_payment.crypto_prices.add(payment_crypto_price)
+
+        service = VerifyTransactionService()
+        with patch(
+            "django_solana_payments.services.verify_transaction_service.transaction.on_commit",
+            side_effect=lambda fn: fn(),
+        ):
+            service.verify_transaction_and_process_payment(
+                payment_address=solana_payment.payment_address,
+                payment_crypto_token=payment_token,
+                send_payment_accepted_signal=True,
+            )
+
+        mock_signal.send_robust.assert_called_once()
 
     @pytest.mark.django_db
     @patch(
@@ -424,6 +492,7 @@ class TestVerifyTransactionAndProcessPayment:
             Pubkey.from_string("2" * 44)
         )
         mock_query_client_class.return_value = mock_query_client
+        mock_signal.send_robust.return_value = []
 
         solana_payment.crypto_prices.add(payment_crypto_price)
 
@@ -431,11 +500,15 @@ class TestVerifyTransactionAndProcessPayment:
         mock_callback = Mock()
 
         service = VerifyTransactionService()
-        service.verify_transaction_and_process_payment(
-            payment_address=solana_payment.payment_address,
-            payment_crypto_token=payment_token,
-            on_success=mock_callback,
-        )
+        with patch(
+            "django_solana_payments.services.verify_transaction_service.transaction.on_commit",
+            side_effect=lambda fn: fn(),
+        ):
+            service.verify_transaction_and_process_payment(
+                payment_address=solana_payment.payment_address,
+                payment_crypto_token=payment_token,
+                on_success=mock_callback,
+            )
 
         # Verify callback was called
         mock_callback.assert_called_once()
@@ -501,8 +574,72 @@ class TestVerifyTransactionAndProcessPayment:
             payment_address=solana_payment.payment_address,
             payment_crypto_token=payment_token,
             meta_data=test_metadata,
+            send_payment_accepted_signal=False,
         )
 
         # Verify metadata was saved
         solana_payment.refresh_from_db()
         assert solana_payment.meta_data == test_metadata
+
+    @pytest.mark.django_db
+    @patch(
+        "django_solana_payments.services.verify_transaction_service.solana_payment_accepted"
+    )
+    @patch(
+        "django_solana_payments.services.verify_transaction_service.send_solana_transaction_to_main_wallet"
+    )
+    @patch(
+        "django_solana_payments.services.verify_transaction_service.SolanaBalanceClient"
+    )
+    @patch(
+        "django_solana_payments.services.verify_transaction_service.SolanaTransactionQueryClient"
+    )
+    def test_existing_metadata_is_preserved_when_meta_data_not_passed(
+        self,
+        mock_query_client_class,
+        mock_balance_client_class,
+        _mock_send_to_main,
+        mock_signal,
+        solana_payment,
+        payment_token,
+        payment_crypto_price,
+        test_settings,
+        settings,
+    ):
+        settings.SOLANA_PAYMENTS = test_settings
+
+        solana_payment.meta_data = {"simulate_hook_failures": ["analytics"]}
+        solana_payment.save(update_fields=["meta_data", "updated"])
+
+        mock_balance_client = MagicMock()
+        mock_balance_client.get_balance_by_address.return_value = Decimal("0.1")
+        mock_balance_client_class.return_value = mock_balance_client
+
+        mock_query_client = MagicMock()
+        mock_transaction = MagicMock(spec=GetTransactionResp)
+        mock_transaction.value.transaction.transaction.signatures = [
+            Signature.from_string("5" * 88)
+        ]
+        mock_tx_status = MagicMock()
+        mock_tx_status.confirmation_status = TransactionConfirmationStatus.Confirmed
+        mock_query_client.get_signatures_statuses.return_value = [mock_tx_status]
+        mock_query_client.get_transactions_for_address.return_value = [mock_transaction]
+        mock_query_client.extract_fee_payer_from_transaction_details.return_value = (
+            Pubkey.from_string("2" * 44)
+        )
+        mock_query_client_class.return_value = mock_query_client
+        mock_signal.send_robust.return_value = []
+        solana_payment.crypto_prices.add(payment_crypto_price)
+
+        with patch(
+            "django_solana_payments.services.verify_transaction_service.transaction.on_commit",
+            side_effect=lambda fn: fn(),
+        ):
+            VerifyTransactionService().verify_transaction_and_process_payment(
+                payment_address=solana_payment.payment_address,
+                payment_crypto_token=payment_token,
+                send_payment_accepted_signal=True,
+            )
+
+        solana_payment.refresh_from_db()
+        assert solana_payment.meta_data["simulate_hook_failures"] == ["analytics"]

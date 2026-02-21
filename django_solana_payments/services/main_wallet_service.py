@@ -48,13 +48,18 @@ def send_transaction_and_update_one_time_wallet(
         solana_transaction_builder=solana_transaction_builder,
     )
     recipient_address_pubkey = Pubkey.from_string(recipient_address)
+    mint_pubkey = (
+        Pubkey.from_string(token_mint_address)
+        if transaction_type == TransactionTypeEnum.SPL
+        else None
+    )
     try:
         data = solana_transaction_sender_client.send_transfer_transaction(
             recipient=recipient_address_pubkey,
             sender_keypair=decrypted_sender_keypair,
             amount=amount,
             transaction_type=transaction_type,
-            token_mint_address=Pubkey.from_string(token_mint_address),
+            token_mint_address=mint_pubkey,
         )
     except Exception as e:
         OneTimePaymentWallet.objects.filter(id=one_time_wallet.id).update(

@@ -49,10 +49,7 @@ class VerifySolanaPayTransferSerializer(serializers.ModelSerializer):
 class VerifySolanaPayTransferQuerySerializer(serializers.Serializer):
     mint_address = serializers.CharField(max_length=64, required=False)
     token_type = serializers.ChoiceField(TokenTypes.choices)
-    meta_data = serializers.JSONField(
-        required=False,
-        default=dict,
-    )
+    meta_data = serializers.JSONField(required=False)
 
     def validate(self, attrs):
         if attrs.get("token_type") == TokenTypes.SPL and not attrs.get("mint_address"):
