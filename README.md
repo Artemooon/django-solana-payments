@@ -2,7 +2,6 @@
 
 ![Documentation Status](https://app.readthedocs.org/projects/django-solana-payments/badge/?version=latest)
 [![Coverage Status](https://coveralls.io/repos/github/Artemooon/django-solana-payments/badge.svg?branch=main)](https://coveralls.io/github/Artemooon/django-solana-payments?branch=main)
-[![Latest on Django Packages](https://img.shields.io/badge/PyPI-{{ package.slug }}-tags-8c3c26.svg)](https://djangopackages.org/packages/p/django-solana-payments/)
 [![PyPI version](https://badge.fury.io/py/django-solana-payments.svg)](https://badge.fury.io/py/django-solana-payments)
 [![Python versions](https://img.shields.io/pypi/pyversions/django-solana-payments.svg)]( https://pypi.python.org/pypi/django-solana-payments)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Artemooon/django-solana-payments/blob/main/LICENSE)
