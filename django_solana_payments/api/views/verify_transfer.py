@@ -1,4 +1,3 @@
-from django.db import transaction
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -27,7 +26,6 @@ class VerifySolanaPayTransferView(generics.RetrieveAPIView):
     permission_classes = [AllowAny]
     serializer_class = VerifySolanaPayTransferSerializer
 
-    @transaction.atomic
     def retrieve(self, request, *args, **kwargs):
         payment_address = self.kwargs.get("payment_address")
 
@@ -94,7 +92,7 @@ class VerifySolanaPayTransferView(generics.RetrieveAPIView):
             )
         except PaymentNotConfirmedError as exc:
             raise ViewException(
-                error_message=str(exc) or "Payment not confirmed",
+                error_message=str(exc) or "Payment has not yet been confirmed",
                 status_code=status.HTTP_409_CONFLICT,
             )
         if not serializer.is_valid(raise_exception=False):

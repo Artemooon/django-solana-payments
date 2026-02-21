@@ -10,7 +10,7 @@ from django_solana_payments.choices import (
     OneTimeWalletStateTypes,
     SolanaPaymentStatusTypes,
 )
-from django_solana_payments.exceptions import PaymentConfigurationError
+from django_solana_payments.exceptions import PaymentConfigurationError, PaymentError
 from django_solana_payments.helpers import (
     get_payment_crypto_token_model,
     get_solana_payment_model,
@@ -26,6 +26,9 @@ from django_solana_payments.services.main_wallet_service import (
 from django_solana_payments.services.one_time_wallet_service import (
     one_time_wallet_service,
 )
+from django_solana_payments.services.verify_transaction_service import (
+    VerifyTransactionService,
+)
 from django_solana_payments.settings import solana_payments_settings
 from django_solana_payments.solana.base_solana_client import base_solana_client
 from django_solana_payments.solana.enums import TransactionTypeEnum
@@ -38,6 +41,101 @@ SolanaPayment = get_solana_payment_model()
 
 
 class SolanaPaymentsService:
+    def recheck_initiated_payments_and_process(
+        self,
+        limit: int | None = None,
+        sleep_interval_seconds: float | int | None = None,
+        send_payment_accepted_signal: bool = True,
+        on_success=None,
+    ) -> dict[str, int]:
+        """
+        Recheck INITIATED payments against on-chain state and process missed confirmations.
+
+        This recovery flow is intended for cases where users paid to one-time wallets but
+        the original verification flow did not update DB status in time.
+        """
+        queryset = SolanaPayment.objects.filter(
+            status=SolanaPaymentStatusTypes.INITIATED
+        ).prefetch_related("crypto_prices__token")
+
+        if limit:
+            payments = list(queryset.order_by("-updated")[:limit])
+        else:
+            payments = list(queryset.order_by("-updated"))
+
+        verify_service = VerifyTransactionService()
+        scanned = 0
+        reconciled = 0
+        pending = 0
+        failed = 0
+        skipped_no_tokens = 0
+
+        for payment in payments:
+            scanned += 1
+
+            token_prices = list(payment.crypto_prices.select_related("token").all())
+            if not token_prices:
+                skipped_no_tokens += 1
+                continue
+
+            payment_reconciled = False
+            payment_failed = False
+
+            for price in token_prices:
+                token = getattr(price, "token", None)
+                if not token:
+                    continue
+
+                try:
+                    status = verify_service.verify_transaction_and_process_payment(
+                        payment_address=payment.payment_address,
+                        payment_crypto_token=token,
+                        send_payment_accepted_signal=send_payment_accepted_signal,
+                        on_success=on_success,
+                    )
+                except PaymentError as exc:
+                    logger.info(
+                        "Recheck payment_id=%s token_id=%s skipped: %s",
+                        payment.id,
+                        token.id,
+                        str(exc),
+                    )
+                    continue
+                except Exception as exc:
+                    logger.exception(
+                        "Recheck failed unexpectedly for payment_id=%s token_id=%s: %s",
+                        payment.id,
+                        token.id,
+                        exc,
+                    )
+                    payment_failed = True
+                    break
+
+                if status in {
+                    SolanaPaymentStatusTypes.CONFIRMED,
+                    SolanaPaymentStatusTypes.FINALIZED,
+                    SolanaPaymentStatusTypes.PROCESSED,
+                }:
+                    payment_reconciled = True
+                    break
+
+            if payment_reconciled:
+                reconciled += 1
+            elif payment_failed:
+                failed += 1
+            else:
+                pending += 1
+
+            if sleep_interval_seconds:
+                time.sleep(sleep_interval_seconds)
+
+        return {
+            "scanned": scanned,
+            "reconciled": reconciled,
+            "pending": pending,
+            "failed": failed,
+            "skipped_no_tokens": skipped_no_tokens,
+        }
 
     def check_expired_solana_payments(self):
         expired_payments = SolanaPayment.objects.filter(
@@ -45,7 +143,9 @@ class SolanaPaymentsService:
             expiration_date__lte=timezone.now(),
         )
         total_not_finished_payments = expired_payments.count()
-        print(f"Total not finished solana payments: {total_not_finished_payments}")
+        logger.info(
+            "Total not finished solana payments: %s", total_not_finished_payments
+        )
 
         if total_not_finished_payments == 0:
             return
@@ -60,8 +160,9 @@ class SolanaPaymentsService:
             state=OneTimeWalletStateTypes.PAYMENT_EXPIRED
         )
 
-        print(
-            f"Marked {total_not_finished_payments} expired payments and their wallets."
+        logger.info(
+            "Marked %s expired payments and their wallets.",
+            total_not_finished_payments,
         )
 
     def mark_not_finished_solana_payments_as_expired_and_close_wallets_accounts(
@@ -102,7 +203,7 @@ class SolanaPaymentsService:
         )
 
         count = one_time_wallets_with_balance.count()
-        print(f"Found {count} one-time wallets to process.")
+        logger.info("Found %s one-time wallets to process.", count)
 
         if count == 0:
             return
@@ -115,10 +216,17 @@ class SolanaPaymentsService:
             wallet_keypair = one_time_wallet_service.load_keypair(wallet.keypair_json)
             wallet_address = wallet_keypair.pubkey()
             recipient_address = solana_payments_settings.RECEIVER_ADDRESS
+            logger.info(
+                "Processing one-time wallet id=%s address=%s recipient=%s",
+                wallet.id,
+                wallet_address,
+                recipient_address,
+            )
 
             if sleep_interval_seconds:
                 time.sleep(sleep_interval_seconds)  # To prevent rate limiting
             balance_sol = solana_balance_client.get_balance_by_address(wallet_address)
+            logger.info("Wallet id=%s SOL balance=%s", wallet.id, balance_sol)
 
             payment = getattr(wallet, payment_wallet_related_name)
             paid_token = payment.paid_token
@@ -130,13 +238,37 @@ class SolanaPaymentsService:
                 if paid_token and paid_token.mint_address
                 else None
             )
+            if paid_token and paid_token.mint_address:
+                logger.info(
+                    "Wallet id=%s SPL balance=%s token_symbol=%s mint=%s",
+                    wallet.id,
+                    balance_spl,
+                    getattr(paid_token, "symbol", None),
+                    paid_token.mint_address,
+                )
+            else:
+                logger.info("Wallet id=%s has no SPL token/mint configured", wallet.id)
 
             if balance_sol > 0:
                 transaction_type = TransactionTypeEnum.NATIVE
                 transaction_amount = balance_sol
+                logger.info(
+                    "Wallet id=%s selected transfer type=%s amount=%s",
+                    wallet.id,
+                    transaction_type.value,
+                    transaction_amount,
+                )
             elif balance_spl and balance_spl > 0:
                 transaction_type = TransactionTypeEnum.SPL
                 transaction_amount = balance_spl
+                logger.info(
+                    "Wallet id=%s selected transfer type=%s amount=%s token_symbol=%s mint=%s",
+                    wallet.id,
+                    transaction_type.value,
+                    transaction_amount,
+                    getattr(paid_token, "symbol", None),
+                    paid_token.mint_address if paid_token else None,
+                )
             else:
                 OneTimePaymentWallet.objects.filter(id=wallet.id).update(
                     state=OneTimeWalletStateTypes.PAYMENT_EXPIRED,
@@ -153,12 +285,19 @@ class SolanaPaymentsService:
                 )
                 continue
 
+            logger.info(
+                "Sending funds from wallet id=%s type=%s amount=%s to recipient=%s",
+                wallet.id,
+                transaction_type.value,
+                transaction_amount,
+                recipient_address,
+            )
             send_transaction_and_update_one_time_wallet(
                 one_time_wallet=wallet,
                 recipient_address=recipient_address,
                 amount=transaction_amount,
-                transaction_type=transaction_type,
-                update_filters_kwargs={"id": wallet.id},
+                transaction_type=TransactionTypeEnum(transaction_type),
+                token_mint_address=paid_token.mint_address if paid_token else None,
             )
 
     def create_payment_crypto_prices_from_allowed_payment_crypto_tokens(self):

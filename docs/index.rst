@@ -71,6 +71,7 @@ If you discover any additional ways to optimize costs, please let us know.
    installation
    drf_api_usage
    payment_tokens
+   payment_confirmation_statuses
    custom_models
    payment_hooks
    management_commands

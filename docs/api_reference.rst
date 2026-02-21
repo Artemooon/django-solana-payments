@@ -16,8 +16,6 @@ VerifyTransactionService
    :show-inheritance:
    :member-order: bysource
 
-.. automethod:: django_solana_payments.services.verify_transaction_service.VerifyTransactionService.verify_transaction_and_process_payment
-
 SolanaPaymentsService
 ^^^^^^^^^^^^^^^^^^^^^
 

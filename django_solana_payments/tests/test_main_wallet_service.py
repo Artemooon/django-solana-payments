@@ -197,6 +197,53 @@ def test_send_transaction_and_update_wallet_marks_failed_on_unconfirmed(
 
 @pytest.mark.django_db
 @patch(
+    "django_solana_payments.services.main_wallet_service.one_time_wallet_service.close_one_time_wallet_atas"
+)
+@patch(
+    "django_solana_payments.services.main_wallet_service.SolanaTransactionSenderClient"
+)
+@patch("django_solana_payments.services.main_wallet_service.SolanaTransactionBuilder")
+@patch("django_solana_payments.services.main_wallet_service.SolanaTokenClient")
+@patch(
+    "django_solana_payments.services.main_wallet_service.one_time_wallet_service.load_keypair"
+)
+def test_send_transaction_and_update_wallet_native_does_not_parse_mint_none(
+    mock_load_keypair,
+    _mock_token_client,
+    _mock_tx_builder,
+    mock_tx_sender_class,
+    mock_close_atas,
+    one_time_wallet,
+):
+    mock_load_keypair.return_value = Keypair()
+    signature = Signature.from_bytes(bytes([4] * 64))
+    mock_sender = MagicMock()
+    mock_sender.send_transfer_transaction.return_value = ConfirmTransactionDTO(
+        tx_signature=signature,
+        confirmation_status=TransactionConfirmationStatus.Confirmed,
+    )
+    mock_tx_sender_class.return_value = mock_sender
+
+    send_transaction_and_update_one_time_wallet(
+        one_time_wallet=one_time_wallet,
+        recipient_address="11111111111111111111111111111111",
+        amount=Decimal("1"),
+        transaction_type=TransactionTypeEnum.NATIVE,
+        token_mint_address=None,
+    )
+
+    one_time_wallet.refresh_from_db()
+    assert one_time_wallet.state == OneTimeWalletStateTypes.SENT_FUNDS
+    mock_sender.send_transfer_transaction.assert_called_once()
+    assert (
+        mock_sender.send_transfer_transaction.call_args.kwargs["token_mint_address"]
+        is None
+    )
+    mock_close_atas.assert_called_once()
+
+
+@pytest.mark.django_db
+@patch(
     "django_solana_payments.services.main_wallet_service.send_transaction_and_update_one_time_wallet"
 )
 def test_send_solana_transaction_to_main_wallet_sets_processing_and_delegates(
