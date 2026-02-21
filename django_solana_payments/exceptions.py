@@ -45,6 +45,10 @@ class PaymentPricingError(PaymentError):
     code = "payment_pricing_error"
 
 
+class PaymentConfigurationError(PaymentError):
+    code = "payment_configuration_error"
+
+
 class PaymentTokenPriceNotFoundError(PaymentPricingError):
     code = "payment_token_price_not_found"
 

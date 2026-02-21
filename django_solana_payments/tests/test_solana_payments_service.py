@@ -5,6 +5,7 @@ import pytest
 from django.utils import timezone
 
 from django_solana_payments.choices import SolanaPaymentStatusTypes, TokenTypes
+from django_solana_payments.exceptions import PaymentConfigurationError
 from django_solana_payments.helpers import (
     get_payment_crypto_token_model,
     get_solana_payment_model,
@@ -63,7 +64,9 @@ def test_check_expired_solana_payments_updates_only_expired_initiated_records(us
 def test_create_payment_crypto_prices_raises_when_no_active_tokens():
     assert PaymentCryptoToken.objects.filter(is_active=True).count() == 0
 
-    with pytest.raises(ValueError, match="No active payment tokens found"):
+    with pytest.raises(
+        PaymentConfigurationError, match="No active payment tokens found"
+    ):
         SolanaPaymentsService().create_payment_crypto_prices_from_allowed_payment_crypto_tokens()
 
 

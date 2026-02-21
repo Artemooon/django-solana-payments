@@ -11,6 +11,8 @@ A plug-and-play Django library for accepting online payments via the Solana bloc
 Key Features
 ------------
 
+-   **Transaction verification and automatic payment confirmation**: Monitors the Solana blockchain, verifies incoming transactions, and automatically confirms payments when the expected amount is received.
+-   **Multi-token support (SOL and SPL tokens)**: Configure a list of active payment tokens (for example, SOL and USDC) and the library will use them for pricing and verification flows.
 -   **Flexibility and customization**: Use your own custom models for payments and tokens to fit your project's needs. Add custom logic using signals or callabacks.
 -   **Ease of integration**: Provides ready-to-use endpoints that can be used in existing DRF applications, or ready-to-use methods for Django applications that are not part of DRF.
 -   **Security and encryption**: Provides an out-of-the-box encryption mechanism that helps keep one-time payment wallets secure.

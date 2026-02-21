@@ -10,6 +10,7 @@ from django_solana_payments.choices import (
     OneTimeWalletStateTypes,
     SolanaPaymentStatusTypes,
 )
+from django_solana_payments.exceptions import PaymentConfigurationError
 from django_solana_payments.helpers import (
     get_payment_crypto_token_model,
     get_solana_payment_model,
@@ -166,7 +167,7 @@ class SolanaPaymentsService:
         payment_tokens = AllowedPaymentCryptoToken.objects.filter(is_active=True)
 
         if not payment_tokens.exists():
-            raise ValueError(
+            raise PaymentConfigurationError(
                 "No active payment tokens found. Please configure at least one active payment token "
                 "in AllowedPaymentCryptoToken before creating a payment."
             )
@@ -181,7 +182,7 @@ class SolanaPaymentsService:
             created_crypto_prices.append(payment_price_obj)
 
         if not created_crypto_prices:
-            raise ValueError(
+            raise PaymentConfigurationError(
                 "Failed to create payment crypto prices. No prices were generated from active payment tokens."
             )
 
@@ -191,6 +192,31 @@ class SolanaPaymentsService:
 
     @transaction.atomic
     def create_payment(self, payment_data: dict) -> SolanaPayment:
+        """
+        Create a new initiated payment with a dedicated one-time wallet and token prices.
+
+        This method is wrapped in a DB transaction to keep payment creation consistent:
+        wallet creation record, payment row, and related crypto price links are persisted
+        together or rolled back together on failure.
+
+        Flow:
+        1. Create one-time wallet (and optional ATAs depending on active SPL tokens).
+        2. Create payment in ``INITIATED`` status and bind wallet/address.
+        3. Build ``SolanaPayPaymentCryptoPrice`` records from active payment tokens.
+        4. Attach created price rows to the payment via M2M.
+
+        Args:
+            payment_data: Validated payment payload used to create ``SolanaPayment``.
+                Common fields include ``user``, ``label``, ``message``, and ``meta_data``.
+
+        Returns:
+            Created ``SolanaPayment`` instance in ``INITIATED`` state.
+
+        Raises:
+            PaymentConfigurationError: If there are no active payment tokens or no
+                payment prices can be generated from configured tokens.
+            Exception: Propagates wallet/payment persistence errors; transaction is rolled back.
+        """
         reference_keypair, payment_address, wallet = (
             one_time_wallet_service.create_one_time_wallet()
         )

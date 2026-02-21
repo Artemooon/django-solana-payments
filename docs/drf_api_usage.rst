@@ -77,7 +77,7 @@ Notes:
 
 **Endpoint:** `GET /solana-payments/verify-transfer/{payment_address}`
 
-Verifies the on-chain transfer and updates payment status when successful.
+Verifies the on-chain transfer and updates payment status when successful or expired.
 
 Required query params:
 

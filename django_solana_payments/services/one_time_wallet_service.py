@@ -267,17 +267,18 @@ def get_one_time_wallet_service() -> OneTimeWalletService:
     Get or create a singleton instance of OneTimeWalletService.
     This allows for easier testing and mocking.
 
-    Usage:
+    Usage examples::
+
         # In production code
         service = get_one_time_wallet_service()
         wallet = service.create_one_time_wallet()
 
-        # In tests - reset before each test
+        # In tests, reset before each test
         reset_one_time_wallet_service()
         service = get_one_time_wallet_service()
 
         # Or mock the factory function
-        with patch('module.get_one_time_wallet_service') as mock:
+        with patch("module.get_one_time_wallet_service") as mock:
             mock.return_value = YourMockService()
     """
     global _one_time_wallet_service_instance
