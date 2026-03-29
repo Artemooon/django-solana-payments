@@ -68,6 +68,33 @@ def test_check_expired_solana_payments_updates_only_expired_initiated_records(us
 
 
 @pytest.mark.django_db
+@patch("django_solana_payments.services.solana_payments_service.solana_payment_expired")
+@patch(
+    "django_solana_payments.services.solana_payments_service.transaction.on_commit",
+    side_effect=lambda fn: fn(),
+)
+def test_check_expired_solana_payments_emits_signal_for_each_expired_payment(
+    _mock_on_commit, mock_signal, user
+):
+    wallet = OneTimePaymentWallet.objects.create(keypair_json="[1,2,3]")
+    payment = SolanaPayment.objects.create(
+        user=user,
+        payment_address="11111111111111111111111111111111",
+        one_time_payment_wallet=wallet,
+        status=SolanaPaymentStatusTypes.INITIATED,
+        expiration_date=timezone.now() - timedelta(minutes=5),
+    )
+    mock_signal.send_robust.return_value = []
+
+    SolanaPaymentsService().check_expired_solana_payments()
+
+    mock_signal.send_robust.assert_called_once()
+    call_kwargs = mock_signal.send_robust.call_args.kwargs
+    assert call_kwargs["payment"].id == payment.id
+    assert call_kwargs["transaction_status"] == SolanaPaymentStatusTypes.EXPIRED
+
+
+@pytest.mark.django_db
 def test_create_payment_crypto_prices_raises_when_no_active_tokens():
     assert PaymentCryptoToken.objects.filter(is_active=True).count() == 0
 
@@ -104,10 +131,22 @@ def test_create_payment_crypto_prices_creates_prices_for_all_active_tokens(
 
 @pytest.mark.django_db
 @patch(
+    "django_solana_payments.services.solana_payments_service.solana_payment_initiated"
+)
+@patch(
+    "django_solana_payments.services.solana_payments_service.transaction.on_commit",
+    side_effect=lambda fn: fn(),
+)
+@patch(
     "django_solana_payments.services.solana_payments_service.one_time_wallet_service.create_one_time_wallet"
 )
 def test_create_payment_assigns_all_active_token_prices(
-    mock_create_one_time_wallet, user, payment_token, spl_token
+    mock_create_one_time_wallet,
+    _mock_on_commit,
+    mock_signal,
+    user,
+    payment_token,
+    spl_token,
 ):
     wallet = OneTimePaymentWallet.objects.create(keypair_json="[1,2,3]")
     mock_create_one_time_wallet.return_value = (
@@ -115,6 +154,7 @@ def test_create_payment_assigns_all_active_token_prices(
         "44444444444444444444444444444444",
         wallet,
     )
+    mock_signal.send_robust.return_value = []
 
     payment = SolanaPaymentsService().create_payment(
         {
@@ -128,6 +168,10 @@ def test_create_payment_assigns_all_active_token_prices(
     assert payment.status == SolanaPaymentStatusTypes.INITIATED
     assert payment.one_time_payment_wallet_id is not None
     assert payment.crypto_prices.count() == 2
+    mock_signal.send_robust.assert_called_once()
+    call_kwargs = mock_signal.send_robust.call_args.kwargs
+    assert call_kwargs["payment"].id == payment.id
+    assert call_kwargs["transaction_status"] == SolanaPaymentStatusTypes.INITIATED
 
 
 @patch(

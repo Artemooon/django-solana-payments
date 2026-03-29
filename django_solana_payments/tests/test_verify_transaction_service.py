@@ -66,9 +66,19 @@ class TestVerifyTransactionAndProcessPayment:
             )
 
     @pytest.mark.django_db
-    def test_payment_expired(self, expired_payment, payment_token):
+    @patch(
+        "django_solana_payments.services.verify_transaction_service.solana_payment_expired"
+    )
+    @patch(
+        "django_solana_payments.services.verify_transaction_service.transaction.on_commit",
+        side_effect=lambda fn: fn(),
+    )
+    def test_payment_expired(
+        self, _mock_on_commit, mock_signal, expired_payment, payment_token
+    ):
         """Test that PaymentExpiredError is raised for expired payments."""
         service = VerifyTransactionService()
+        mock_signal.send_robust.return_value = []
 
         with pytest.raises(PaymentExpiredError):
             service.verify_transaction_and_process_payment(
@@ -86,6 +96,10 @@ class TestVerifyTransactionAndProcessPayment:
             expired_payment.one_time_payment_wallet.state
             == OneTimeWalletStateTypes.PAYMENT_EXPIRED
         )
+        mock_signal.send_robust.assert_called_once()
+        call_kwargs = mock_signal.send_robust.call_args.kwargs
+        assert call_kwargs["payment"].id == expired_payment.id
+        assert call_kwargs["transaction_status"] == SolanaPaymentStatusTypes.EXPIRED
 
     @pytest.mark.django_db
     def test_payment_already_confirmed(self, solana_payment, payment_token):

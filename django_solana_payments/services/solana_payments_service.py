@@ -30,6 +30,10 @@ from django_solana_payments.services.verify_transaction_service import (
     VerifyTransactionService,
 )
 from django_solana_payments.settings import solana_payments_settings
+from django_solana_payments.signals import (
+    solana_payment_expired,
+    solana_payment_initiated,
+)
 from django_solana_payments.solana.base_solana_client import base_solana_client
 from django_solana_payments.solana.enums import TransactionTypeEnum
 from django_solana_payments.solana.solana_balance_client import SolanaBalanceClient
@@ -41,6 +45,52 @@ SolanaPayment = get_solana_payment_model()
 
 
 class SolanaPaymentsService:
+    def _dispatch_payment_initiated_signal(self, payment_id: int) -> bool:
+        payment = SolanaPayment.objects.filter(id=payment_id).first()
+        if not payment:
+            logger.warning("Payment %s not found for initiated signal", payment_id)
+            return False
+
+        responses = solana_payment_initiated.send_robust(
+            sender=self.__class__,
+            payment=payment,
+            transaction_status=SolanaPaymentStatusTypes.INITIATED,
+        )
+        failed_receivers = [
+            resp for _, resp in responses if isinstance(resp, Exception)
+        ]
+        if failed_receivers:
+            logger.warning(
+                "solana_payment_initiated had %d failing receivers for payment_id=%s",
+                len(failed_receivers),
+                payment.id,
+            )
+            return False
+        return True
+
+    def _dispatch_payment_expired_signal(self, payment_id: int) -> bool:
+        payment = SolanaPayment.objects.filter(id=payment_id).first()
+        if not payment:
+            logger.warning("Payment %s not found for expired signal", payment_id)
+            return False
+
+        responses = solana_payment_expired.send_robust(
+            sender=self.__class__,
+            payment=payment,
+            transaction_status=SolanaPaymentStatusTypes.EXPIRED,
+        )
+        failed_receivers = [
+            resp for _, resp in responses if isinstance(resp, Exception)
+        ]
+        if failed_receivers:
+            logger.warning(
+                "solana_payment_expired had %d failing receivers for payment_id=%s",
+                len(failed_receivers),
+                payment.id,
+            )
+            return False
+        return True
+
     def recheck_initiated_payments_and_process(
         self,
         limit: int | None = None,
@@ -142,6 +192,7 @@ class SolanaPaymentsService:
             status=SolanaPaymentStatusTypes.INITIATED,
             expiration_date__lte=timezone.now(),
         )
+        expired_payment_ids = list(expired_payments.values_list("id", flat=True))
         total_not_finished_payments = expired_payments.count()
         logger.info(
             "Total not finished solana payments: %s", total_not_finished_payments
@@ -164,6 +215,13 @@ class SolanaPaymentsService:
             "Marked %s expired payments and their wallets.",
             total_not_finished_payments,
         )
+
+        for payment_id in expired_payment_ids:
+            transaction.on_commit(
+                lambda payment_id=payment_id: self._dispatch_payment_expired_signal(
+                    payment_id
+                )
+            )
 
     def mark_not_finished_solana_payments_as_expired_and_close_wallets_accounts(
         self, sleep_interval_seconds: float | int | None = None
@@ -372,5 +430,10 @@ class SolanaPaymentsService:
         )
 
         payment.crypto_prices.add(*payment_prices)
+        transaction.on_commit(
+            lambda payment_id=payment.id: self._dispatch_payment_initiated_signal(
+                payment_id
+            )
+        )
 
         return payment

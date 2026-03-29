@@ -34,7 +34,10 @@ from django_solana_payments.services.main_wallet_service import (
     send_solana_transaction_to_main_wallet,
 )
 from django_solana_payments.settings import solana_payments_settings
-from django_solana_payments.signals import solana_payment_accepted
+from django_solana_payments.signals import (
+    solana_payment_accepted,
+    solana_payment_expired,
+)
 from django_solana_payments.solana.base_solana_client import base_solana_client
 from django_solana_payments.solana.enums import TransactionTypeEnum
 from django_solana_payments.solana.solana_balance_client import SolanaBalanceClient
@@ -85,7 +88,8 @@ class VerifyTransactionService:
                 (native SOL or SPL token).
             meta_data: Optional metadata to persist on payment update after successful verification.
             send_payment_accepted_signal: Whether to emit ``solana_payment_accepted`` on success.
-            on_success: Optional callback called as ``on_success(solana_payment, transaction_status)``
+            on_success: Optional callback called as
+                ``on_success(solana_payment, transaction_status)``
                 after successful payment processing.
 
         Returns:
@@ -222,6 +226,28 @@ class VerifyTransactionService:
             return False
         return True
 
+    def _dispatch_payment_expired_signal(
+        self,
+        payment: SolanaPayment,
+    ) -> bool:
+        responses = solana_payment_expired.send_robust(
+            sender=self.__class__,
+            payment=payment,
+            transaction_status=SolanaPaymentStatusTypes.EXPIRED,
+        )
+
+        failed_receivers = [
+            resp for _, resp in responses if isinstance(resp, Exception)
+        ]
+        if failed_receivers:
+            logger.warning(
+                "solana_payment_expired had %d failing receivers for payment_id=%s",
+                len(failed_receivers),
+                payment.id,
+            )
+            return False
+        return True
+
     def _is_transaction_confirmed(self, transaction: GetTransactionResp) -> bool:
         """
         Checks if a transaction has reached the desired commitment level provided in PAYMENT_ACCEPTANCE_COMMITMENT setting.
@@ -335,6 +361,11 @@ class VerifyTransactionService:
             OneTimePaymentWallet.objects.filter(
                 id=solana_payment.one_time_payment_wallet.id
             ).update(state=OneTimeWalletStateTypes.PAYMENT_EXPIRED)
+            transaction.on_commit(
+                lambda payment_id=solana_payment.id: self._emit_payment_expired_signal(
+                    payment_id
+                )
+            )
             logger.warning(
                 f"Payment expired: payment_address={solana_payment.payment_address}"
             )
@@ -453,3 +484,11 @@ class VerifyTransactionService:
             "Payment transaction processed and status updated: status=%s",
             transaction_status,
         )
+
+    def _emit_payment_expired_signal(self, payment_id: int) -> bool:
+        payment = SolanaPayment.objects.filter(id=payment_id).first()
+        if not payment:
+            logger.warning("Payment %s not found for expired signal", payment_id)
+            return False
+
+        return self._dispatch_payment_expired_signal(payment)

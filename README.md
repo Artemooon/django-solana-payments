@@ -90,6 +90,10 @@ Common UI examples:
 
 Optionally call `GET /solana-payments/payments/{payment_address}/` for details.
 
+## Demo 
+
+[![Postman demo](./docs/assets/postman-demo.gif)](./docs/assets/postman-demo.gif)
+
 ## Running the Example Project
 
 The included example project provides a demonstration of how to use the library and what it can do. To run it:
@@ -135,7 +139,7 @@ This package is licensed under the MIT License. See the LICENSE file for more de
 
 ## Contributing
 
-Contributions are welcome. If you encounter a bug, have a feature request, or see an opportunity for improvement, please open an issue to discuss it. Pull requests are also welcome.
+Contributions are welcome. Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for setup instructions, testing, feature proposals, and pull request guidelines.
 
 If you find this project useful, consider giving it a star to support its development!
 

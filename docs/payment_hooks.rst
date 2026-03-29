@@ -14,14 +14,35 @@ This is useful for tasks like:
 Using Signals
 -------------
 
-The library sends a `solana_payment_accepted` signal when a payment is successfully verified and processed. You can listen for this signal to trigger your custom logic.
-This is a perfect way to add your own logic if you are using the DRF plugin and don't want to override any methods.
+The library exposes a small set of lifecycle signals for durable payment state changes. This is the recommended way to attach your own logic if you are using the DRF plugin and do not want to override views or services.
 
-The signal provides the following arguments:
-- `sender`: The class that sent the signal (`VerifyTransactionService`).
-- `payment`: The payment instance that was verified.
-- `transaction_status`: The confirmation status of the transaction (e.g., `CONFIRMED` or `FINALIZED`).
-- `payment_amount`: The amount of cryptocurrency that was paid.
+Available signals:
+
+- **`solana_payment_initiated`**: fired after a payment row is created in `INITIATED` status.
+- **`solana_payment_expired`**: fired after a payment is moved to `EXPIRED` status.
+- **`solana_payment_accepted`**: fired after a payment is successfully verified and processed.
+
+Signal payloads:
+
+**`solana_payment_initiated`**
+- `sender`: `SolanaPaymentsService`
+- `payment`: the created payment instance
+- `transaction_status`: always `INITIATED`
+
+**`solana_payment_expired`**
+- `sender`: `SolanaPaymentsService` or `VerifyTransactionService`, depending on which flow expired the payment
+- `payment`: the expired payment instance
+- `transaction_status`: always `EXPIRED`
+
+**`solana_payment_accepted`**
+- `sender`: `VerifyTransactionService`
+- `payment`: the verified payment instance
+- `transaction_status`: the accepted payment status (`CONFIRMED` or `FINALIZED`; `PROCESSED` may also appear if your acceptance commitment is configured that way)
+- `payment_amount`: the amount of cryptocurrency that was paid
+
+Signals are dispatched with `send_robust()` and scheduled with `transaction.on_commit()` where relevant, so receivers do not break payment processing and only run after the DB transaction is committed.
+
+The package does not currently emit a generic "payment failed" signal. Most verification failures in the current flow are transient or request-level outcomes, not durable payment lifecycle states.
 
 **Example Signal Handler:**
 
@@ -31,19 +52,40 @@ Here is an example of how you can define signal handlers in your project. You ca
 
     import logging
     from django.dispatch import receiver
-    from django_solana_payments.signals import solana_payment_accepted
+    from django_solana_payments.signals import (
+        solana_payment_accepted,
+        solana_payment_expired,
+        solana_payment_initiated,
+    )
     from django_solana_payments.choices import SolanaPaymentStatusTypes
 
     logger = logging.getLogger(__name__)
 
+    @receiver(solana_payment_initiated)
+    def handle_payment_initiated(sender, payment, transaction_status, **kwargs):
+        logger.info(
+            "Payment initiated: id=%s status=%s address=%s",
+            payment.id,
+            transaction_status,
+            payment.payment_address,
+        )
+
     @receiver(solana_payment_accepted)
-    def handle_payment_accepted(sender, payment, transaction_status, **kwargs):
+    def handle_payment_accepted(
+        sender,
+        payment,
+        transaction_status,
+        payment_amount=None,
+        **kwargs,
+    ):
         """
         Custom handler that fires when a Solana payment is verified.
         """
         logger.info(
-            f"Payment accepted! Payment ID: {payment.id}, "
-            f"Status: {transaction_status}"
+            "Payment accepted: id=%s status=%s amount=%s",
+            payment.id,
+            transaction_status,
+            payment_amount,
         )
 
         # Example 1: Send a confirmation email
@@ -53,6 +95,19 @@ Here is an example of how you can define signal handlers in your project. You ca
         # Example 2: Update a related order
         if payment.meta_data and "order_id" in payment.meta_data:
             update_order_status(payment.meta_data["order_id"], "paid")
+
+    @receiver(solana_payment_expired)
+    def handle_payment_expired(
+        sender,
+        payment,
+        transaction_status,
+        **kwargs,
+    ):
+        logger.warning(
+            "Payment expired: id=%s status=%s",
+            payment.id,
+            transaction_status,
+        )
 
     def send_payment_confirmation_email(payment):
         logger.info(f"Sending confirmation email to {payment.user.email}")
@@ -81,9 +136,17 @@ All examples can be found in the `demo project <https://github.com/Artemooon/dja
 Using the `on_success` Callback
 -------------------------------
 
-If you are calling the verification service directly, you can pass an `on_success` callback function. This function will be executed after the payment is successfully verified and before the signal is sent.
+If you are calling the verification service directly, you can pass an `on_success` callback function.
 
-The callback receives the `payment` instance and the `transaction_status` as arguments.
+The callback receives the `payment` instance and the `transaction_status`.
+
+Current behavior:
+
+- the callback only runs for successful verification flows
+- it is scheduled with `transaction.on_commit()`
+- it runs after the payment row is committed
+- if `send_payment_accepted_signal=True`, the success signal is attempted before the callback
+- callback exceptions are logged and do not roll back the payment update
 
 **Example `on_success` Callback:**
 
@@ -96,12 +159,11 @@ The callback receives the `payment` instance and the `transaction_status` as arg
         # Add any other custom logic here
 
     # When calling the service
-    # verify_service = VerifyTransactionService()
-    # verify_service.verify_transaction_and_process_payment(
-    #     payment_address="...",
-    #     payment_crypto_token=my_token,
-    #     on_success=my_success_callback
-    # )
+    verify_service = VerifyTransactionService()
+    verify_service.verify_transaction_and_process_payment(
+         payment_address="...",
+         payment_crypto_token=my_token,
+         on_success=my_success_callback
+    )
 
 This approach is useful for synchronous tasks or when you want to handle the logic in the same part of the code that initiates the verification.
-

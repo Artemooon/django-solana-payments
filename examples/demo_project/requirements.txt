@@ -1,3 +1,3 @@
-#django-solana-payments==0.1.0
+#latest django-solana-payments
 django-solana-payments @ git+https://github.com/Artemooon/django-solana-payments.git@main
 python-dotenv==1.2.1
