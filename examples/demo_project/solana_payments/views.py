@@ -81,8 +81,6 @@ def _render_widget_demo(
     default_message = request.GET.get("message", "Scan with a Solana Pay wallet")
     token = None
     token_prices = []
-    tokens_endpoint = request.build_absolute_uri("/api/solana/payments-tokens/")
-
     try:
         payment = create_payment(
             {
@@ -135,7 +133,6 @@ def _render_widget_demo(
             "currencySymbol": getattr(token, "symbol", "SOL") if token else "SOL",
         },
         tokens={
-            "endpoint": tokens_endpoint,
             "initialTokens": [
                 {
                     "id": price.token.id,

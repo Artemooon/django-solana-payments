@@ -14,7 +14,6 @@ import {
 } from "@solana/spl-token";
 
 import type {
-  PaymentWidgetTokenOption,
   PaymentWidgetTokenType,
   PaymentWidgetTransactionConfig,
 } from "./types";
@@ -44,24 +43,6 @@ export function buildSolanaPayUrl({
     url.searchParams.set("spl-token", mintAddress);
   }
   return url.toString();
-}
-
-export function normalizeTokenOption(token: {
-  id: number;
-  token_type: PaymentWidgetTokenType;
-  mint_address?: string | null;
-  payment_crypto_price: string;
-  name: string;
-  symbol: string;
-}): PaymentWidgetTokenOption {
-  return {
-    id: token.id,
-    tokenType: token.token_type,
-    mintAddress: token.mint_address,
-    amount: token.payment_crypto_price,
-    name: token.name,
-    symbol: token.symbol,
-  };
 }
 
 export function formatSolAmountForDisplay(amount: string, maxDecimals: number = 4) {

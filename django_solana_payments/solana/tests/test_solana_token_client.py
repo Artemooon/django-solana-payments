@@ -41,12 +41,12 @@ def test_create_associated_token_addresses_for_mints_calls_send_and_confirm():
     real_fee_payer = Keypair()
     fake_base.BASE_SENDER_KEYPAIR = real_fee_payer
 
-    fake_base.send_transaction_with_retry.return_value = Signature.from_bytes(
-        bytes([1] * 64)
-    )
-    fake_base.confirm_transaction.return_value = None
-
     client = SolanaTokenClient(base_solana_client=fake_base)
+    client.solana_transaction_sender_client = MagicMock()
+    client.solana_transaction_sender_client.send_transaction_with_retry.return_value = (
+        Signature.from_bytes(bytes([1] * 64))
+    )
+    client.solana_transaction_sender_client.confirm_transaction.return_value = None
 
     recipient = Pubkey.from_bytes(bytes([3] * 32))
     mints = [Pubkey.from_bytes(bytes([2] * 32))]
@@ -80,10 +80,14 @@ def test_create_associated_token_addresses_for_mints_calls_send_and_confirm():
         "message_obj",
         [fake_base.BASE_SENDER_KEYPAIR],
     )
-    fake_base.send_transaction_with_retry.assert_called_once_with("versioned_tx")
-    assert fake_base.send_transaction_with_retry.called
-    assert fake_base.confirm_transaction.called
-    assert sig == fake_base.send_transaction_with_retry.return_value
+    client.solana_transaction_sender_client.send_transaction_with_retry.assert_called_once_with(
+        "versioned_tx"
+    )
+    assert client.solana_transaction_sender_client.confirm_transaction.called
+    assert (
+        sig
+        == client.solana_transaction_sender_client.send_transaction_with_retry.return_value
+    )
 
 
 def test_close_associated_token_accounts_and_recover_rent_sends_transaction():
@@ -100,12 +104,14 @@ def test_close_associated_token_accounts_and_recover_rent_sends_transaction():
     dummy_owner = Keypair()
 
     account_to_close = Pubkey.from_bytes(bytes([5] * 32))
-    fake_base.asend_transaction_with_retry = AsyncMock(
+    client = SolanaTokenClient(base_solana_client=fake_base)
+    client.solana_transaction_sender_client = MagicMock()
+    client.solana_transaction_sender_client.asend_transaction_with_retry = AsyncMock(
         return_value=Signature.from_bytes(bytes([2] * 64))
     )
-    fake_base.aconfirm_transaction = AsyncMock(return_value=None)
-
-    client = SolanaTokenClient(base_solana_client=fake_base)
+    client.solana_transaction_sender_client.aconfirm_transaction = AsyncMock(
+        return_value=None
+    )
 
     with (
         patch.object(
@@ -139,5 +145,7 @@ def test_close_associated_token_accounts_and_recover_rent_sends_transaction():
         "message_obj",
         [dummy_owner, fake_base.BASE_SENDER_KEYPAIR],
     )
-    fake_base.asend_transaction_with_retry.assert_called_once_with("versioned_tx")
-    fake_base.aconfirm_transaction.assert_called()
+    client.solana_transaction_sender_client.asend_transaction_with_retry.assert_called_once_with(
+        "versioned_tx"
+    )
+    client.solana_transaction_sender_client.aconfirm_transaction.assert_called()

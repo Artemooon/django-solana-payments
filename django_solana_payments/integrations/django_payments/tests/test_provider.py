@@ -217,10 +217,7 @@ def test_get_form_renders_widget_markup(
     ]
     mock_get_or_create_solana_payment.return_value = solana_payment
 
-    provider = SolanaPaymentsProvider(
-        tokens_endpoint="/api/solana/payments-tokens/",
-        widget_theme={"accent": "#0f766e"},
-    )
+    provider = SolanaPaymentsProvider(widget_theme={"accent": "#0f766e"})
 
     form = provider.get_form(payment)
     rendered = form.render()
@@ -232,3 +229,52 @@ def test_get_form_renders_widget_markup(
     assert "/static/solana_payments/solana-payment-widget/widget.css" in rendered
     assert '"verifyEndpoint": "/process/"' in rendered
     assert '"tokenType": "NATIVE"' in rendered
+
+
+@pytest.mark.django_db
+@patch.object(SolanaPaymentsProvider, "_get_or_create_solana_payment")
+def test_get_form_orders_initial_tokens_with_selected_token_first(
+    mock_get_or_create_solana_payment,
+    payment_token,
+):
+    payment = DummyPayment()
+    other_token = SimpleNamespace(
+        id=999,
+        token_type="SPL",
+        mint_address="Mint111111111111111111111111111111111111111",
+        name="USD Coin",
+        symbol="USDC",
+    )
+    selected_token_price = SimpleNamespace(
+        token=payment_token,
+        amount_in_crypto=Decimal("0.1"),
+    )
+    other_token_price = SimpleNamespace(
+        token=other_token,
+        amount_in_crypto=Decimal("1.5"),
+    )
+    solana_payment = SimpleNamespace(
+        id=321,
+        payment_address="GjwcWFQYzemBtpUoN5fMAP2FZviTtMRWCmrppGuTthJS",
+        label="Premium Plan",
+        message="Monthly subscription",
+        meta_data={"order_id": "sub-1001"},
+    )
+    solana_payment.crypto_prices = MagicMock()
+    solana_payment.crypto_prices.select_related.return_value.all.return_value = [
+        other_token_price,
+        selected_token_price,
+    ]
+    mock_get_or_create_solana_payment.return_value = solana_payment
+
+    provider = SolanaPaymentsProvider(
+        token_selector=lambda payment, solana_payment, token_prices: selected_token_price,
+    )
+
+    form = provider.get_form(payment)
+
+    initial_tokens = form.widget_config["tokens"]["initialTokens"]
+
+    assert initial_tokens[0]["id"] == payment_token.id
+    assert initial_tokens[0]["amount"] == "0.1"
+    assert initial_tokens[1]["id"] == 999

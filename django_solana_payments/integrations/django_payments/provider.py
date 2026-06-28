@@ -46,7 +46,6 @@ class SolanaPaymentsProvider(BasicProvider):
         supported_wallets: list[str] | None = None,
         widget_js_path: str = "solana_payments/solana-payment-widget/widget.js",
         widget_css_path: str = "solana_payments/solana-payment-widget/widget.css",
-        tokens_endpoint: str = "",
         widget_theme: dict[str, Any] | None = None,
         wallet_adapter_factory: str | None = None,
         verify_poll_interval_ms: int = 1500,
@@ -64,7 +63,6 @@ class SolanaPaymentsProvider(BasicProvider):
         self.supported_wallets = supported_wallets or ["phantom", "solflare"]
         self.widget_js_path = widget_js_path
         self.widget_css_path = widget_css_path
-        self.tokens_endpoint = tokens_endpoint
         self.widget_theme = widget_theme or {}
         self.wallet_adapter_factory = wallet_adapter_factory
         self.verify_poll_interval_ms = verify_poll_interval_ms
@@ -94,6 +92,9 @@ class SolanaPaymentsProvider(BasicProvider):
         message = self._build_payment_message(payment, solana_payment)
         spl_token = token.mint_address if token.token_type == TokenTypes.SPL else None
         token_prices = list(solana_payment.crypto_prices.select_related("token").all())
+        ordered_token_prices = [token_price] + [
+            price for price in token_prices if price.token.id != token_price.token.id
+        ]
 
         widget_config = build_payment_widget_config(
             solana_pay_url=build_solana_pay_url(
@@ -111,7 +112,6 @@ class SolanaPaymentsProvider(BasicProvider):
             currency_symbol=getattr(token, "symbol", "SOL"),
             verify_endpoint=payment.get_process_url(),
             tokens={
-                "endpoint": self.tokens_endpoint,
                 "initialTokens": [
                     {
                         "id": price.token.id,
@@ -121,7 +121,7 @@ class SolanaPaymentsProvider(BasicProvider):
                         "name": price.token.name,
                         "symbol": price.token.symbol,
                     }
-                    for price in token_prices
+                    for price in ordered_token_prices
                 ],
             },
             title=self.title,

@@ -20,6 +20,9 @@ from spl.token.models import CloseAccountParams
 
 from django_solana_payments.settings import solana_payments_settings
 from django_solana_payments.solana.base_solana_client import BaseSolanaClient
+from django_solana_payments.solana.solana_transaction_sender_client import (
+    SolanaTransactionSenderClient,
+)
 
 solana_client_logger = logging.getLogger(__name__)
 
@@ -27,6 +30,9 @@ solana_client_logger = logging.getLogger(__name__)
 class SolanaTokenClient:
     def __init__(self, base_solana_client: BaseSolanaClient):
         self.base_solana_client = base_solana_client
+        self.solana_transaction_sender_client = SolanaTransactionSenderClient(
+            base_solana_client=base_solana_client
+        )
 
     def _build_versioned_transaction(
         self,
@@ -188,11 +194,13 @@ class SolanaTokenClient:
             signers=[self.base_solana_client.BASE_SENDER_KEYPAIR],
             recent_blockhash=latest_blockhash.blockhash,
         )
-        sent_transaction_sig = self.base_solana_client.send_transaction_with_retry(
-            transaction
+        sent_transaction_sig = (
+            self.solana_transaction_sender_client.send_transaction_with_retry(
+                transaction
+            )
         )
 
-        self.base_solana_client.confirm_transaction(sent_transaction_sig)
+        self.solana_transaction_sender_client.confirm_transaction(sent_transaction_sig)
 
         return sent_transaction_sig
 
@@ -247,12 +255,14 @@ class SolanaTokenClient:
         )
 
         try:
-            sent_transaction_sig = (
-                await self.base_solana_client.asend_transaction_with_retry(tx)
+            sent_transaction_sig = await self.solana_transaction_sender_client.asend_transaction_with_retry(
+                tx
             )
             solana_client_logger.info(f"Transaction sent: {sent_transaction_sig}")
             # Confirm the transaction
-            await self.base_solana_client.aconfirm_transaction(sent_transaction_sig)
+            await self.solana_transaction_sender_client.aconfirm_transaction(
+                sent_transaction_sig
+            )
             solana_client_logger.info(
                 f"Transaction {sent_transaction_sig} confirmed. Rent has been recovered."
             )

@@ -15,6 +15,7 @@ All notable changes to this project should be documented in this file.
 - Renamed the example app from `payments` to `solana_payments`.
 - Transaction verification skips transactions that only generates the one-time wallet. If a transaction creates the ATA and sends the payment in the same transaction, it is still accepted as a valid payment.
 - Upgraded the Solana dependency to `solana>=0.39.0` and migrated the internal Solana client toward the async `AsyncClient` API with sync-compatible wrappers.
+- Moved `confirm_transaction` from `BaseSolanaClient` to `SolanaTransactionSenderClient`.
 
 ### Breaking Changes
 

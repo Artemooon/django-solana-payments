@@ -7,6 +7,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Artemooon/django-solana-payments/blob/main/LICENSE)
 
 A Django library for integrating Solana payments into your project. This library provides a flexible and customizable way to accept Solana payments with support for customizable models, an easy-to-use API, and management commands for processing online payments using the Solana blockchain.
+Under the hood, it builds on the open source [solana-py](https://github.com/michaelhly/solana-py) library for interacting with the Solana blockchain.
 
 ## Key Features
 
@@ -34,6 +35,12 @@ See the full documentation at https://django-solana-payments.readthedocs.io/
     pip install "django-solana-payments[drf]"
     ```
     This provides ready-to-use API endpoints for creating and managing payments.
+
+    For `django-payments` integration support, install the `django-payments` extra:
+    ```bash
+    pip install "django-solana-payments[django-payments]"
+    ```
+    This provides the `django-payments` provider and checkout widget integration.
 
 2.  **Configure `settings.py`**
     ```python

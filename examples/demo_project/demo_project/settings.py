@@ -153,7 +153,6 @@ PAYMENT_VARIANTS = {
         "django_solana_payments.integrations.django_payments.SolanaPaymentsProvider",
         {
             "rpc_url": "https://api.devnet.solana.com",
-            "tokens_endpoint": "/api/solana/payments-tokens/",
             "supported_wallets": ["phantom", "solflare"],
             "widget_js_path": "solana_payments/solana-payment-widget/widget.js",
             "widget_css_path": "solana_payments/solana-payment-widget/widget.css",

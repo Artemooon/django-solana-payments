@@ -7,7 +7,7 @@ import type {
   PaymentWidgetTokenOption,
   PaymentWidgetTransactionConfig,
 } from "./types";
-import { buildSolanaPayUrl, normalizeTokenOption } from "./utils";
+import { buildSolanaPayUrl } from "./utils";
 
 type PaymentWidgetProps = {
   config: PaymentWidgetConfig;
@@ -42,7 +42,6 @@ export function PaymentWidget({ config }: PaymentWidgetProps) {
   const [selectedTokenId, setSelectedTokenId] = useState<number | null>(
     initialTokens[0]?.id || null,
   );
-  const [tokensError, setTokensError] = useState("");
   const [walletNotice, setWalletNotice] = useState<WidgetNotice | null>(null);
   const [walletNoticeDismissVersion, setWalletNoticeDismissVersion] = useState(0);
 
@@ -50,87 +49,6 @@ export function PaymentWidget({ config }: PaymentWidgetProps) {
     setAvailableTokens(initialTokens);
     setSelectedTokenId(initialTokens[0]?.id || null);
   }, [initialTokens]);
-
-  useEffect(() => {
-    const tokensEndpoint = tokens?.endpoint;
-    if (!tokensEndpoint) {
-      return;
-    }
-
-    let isCancelled = false;
-
-    const loadTokens = async () => {
-      try {
-        setTokensError("");
-        const response = await fetch(tokensEndpoint, {
-          headers: {
-            Accept: "application/json",
-          },
-        });
-        if (!response.ok) {
-          throw new Error("Failed to load payment tokens.");
-        }
-
-        const payload = await response.json();
-        const endpointTokens = Array.isArray(payload)
-          ? payload.map(normalizeTokenOption)
-          : [];
-        const paymentTokenIds = new Set(initialTokens.map((token) => token.id));
-        const normalizedTokens =
-          initialTokens.length > 0
-            ? endpointTokens
-                .filter((token) => paymentTokenIds.has(token.id))
-                .map((token) => {
-                  const snapshotToken = initialTokens.find(
-                    (initialToken) => initialToken.id === token.id,
-                  );
-                  return snapshotToken
-                    ? {
-                        ...token,
-                        amount: snapshotToken.amount,
-                        tokenType: snapshotToken.tokenType,
-                        mintAddress: snapshotToken.mintAddress,
-                      }
-                    : token;
-                })
-            : endpointTokens;
-
-        if (!isCancelled) {
-          setAvailableTokens(normalizedTokens);
-          setSelectedTokenId((currentTokenId) => {
-            if (
-              currentTokenId &&
-              normalizedTokens.some((token) => token.id === currentTokenId)
-            ) {
-              return currentTokenId;
-            }
-            return normalizedTokens[0]?.id || null;
-          });
-        }
-      } catch (error) {
-        if (!isCancelled) {
-          setTokensError(
-            error instanceof Error
-              ? error.message
-              : "Failed to load payment tokens.",
-          );
-          setWalletNotice({
-            kind: "error",
-            message:
-              error instanceof Error
-                ? error.message
-                : "Failed to load payment tokens.",
-          });
-        }
-      }
-    };
-
-    void loadTokens();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [initialTokens, tokens?.endpoint]);
 
   const styleVars: WidgetStyleVars = {
     "--spw-accent": theme.accent,
@@ -197,18 +115,31 @@ export function PaymentWidget({ config }: PaymentWidgetProps) {
     });
   }, [config.solanaPayUrl, resolvedTransaction]);
 
+  const resolvedVerification = useMemo(() => {
+    if (!resolvedTransaction?.recipient) {
+      return config.verification;
+    }
+
+    if (config.verification?.verifyEndpoint) {
+      return config.verification;
+    }
+
+    return {
+      enabled: true,
+      redirectOnSuccess: config.verification?.redirectOnSuccess,
+      pollIntervalMs: config.verification?.pollIntervalMs,
+      timeoutMs: config.verification?.timeoutMs,
+      successStatuses: config.verification?.successStatuses,
+      verifyEndpoint: `/solana-payments/verify-transfer/${resolvedTransaction.recipient}/`,
+    };
+  }, [config.verification, resolvedTransaction]);
+
   const activeNotice = useMemo(() => {
     if (walletNotice) {
       return walletNotice;
     }
-    if (tokensError) {
-      return {
-        kind: "error" as const,
-        message: tokensError,
-      };
-    }
     return null;
-  }, [tokensError, walletNotice]);
+  }, [walletNotice]);
 
   return (
     <section className="spw-card" style={styleVars}>
@@ -248,7 +179,7 @@ export function PaymentWidget({ config }: PaymentWidgetProps) {
         <WalletActionBlock
           supportedWallets={wallet.supportedWallets || ["phantom", "solflare"]}
           transaction={resolvedTransaction}
-          verification={config.verification}
+          verification={resolvedVerification}
           onNoticeChange={setWalletNotice}
           noticeDismissVersion={walletNoticeDismissVersion}
         />
@@ -274,7 +205,6 @@ export function PaymentWidget({ config }: PaymentWidgetProps) {
               aria-label="Dismiss message"
               onClick={() => {
                 setWalletNotice(null);
-                setTokensError("");
                 setWalletNoticeDismissVersion((currentVersion) => currentVersion + 1);
               }}
             >

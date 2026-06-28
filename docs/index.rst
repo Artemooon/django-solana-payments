@@ -41,6 +41,7 @@ Common RPC options can be configured through `SOLANA_PAYMENTS`, including:
 - `RPC_RATE_LIMIT`
 
 For full setup examples, see :doc:`installation`.
+For async usage details, see :doc:`async_support`.
 
 How It Works
 ------------
@@ -91,9 +92,11 @@ If you discover any additional ways to optimize costs, please let us know.
    payment_confirmation_statuses
    custom_models
    payment_hooks
+   async_support
    management_commands
    one_time_wallets_encryption
    frontend_widget_configuration
+   django_payments_integration
    api_reference
 
 

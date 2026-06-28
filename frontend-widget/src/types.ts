@@ -44,7 +44,6 @@ export type PaymentWidgetTokenOption = {
 };
 
 export type PaymentWidgetTokensConfig = {
-  endpoint?: string;
   initialTokens?: PaymentWidgetTokenOption[];
 };
 

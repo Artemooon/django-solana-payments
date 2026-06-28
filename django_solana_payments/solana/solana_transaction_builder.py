@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from solders.instruction import Instruction
 from solders.keypair import Keypair
@@ -10,14 +11,16 @@ from spl.token.instructions import transfer as spl_transfer
 from spl.token.models import TransferParams as SplTransferParams
 
 from django_solana_payments.solana.base_solana_client import BaseSolanaClient
-from django_solana_payments.solana.solana_token_client import SolanaTokenClient
+
+if TYPE_CHECKING:
+    from django_solana_payments.solana.solana_token_client import SolanaTokenClient
 
 
 class SolanaTransactionBuilder:
     def __init__(
         self,
         base_solana_client: BaseSolanaClient,
-        solana_token_client: SolanaTokenClient,
+        solana_token_client: "SolanaTokenClient",
     ):
         self.base_solana_client = base_solana_client
         self.solana_token_client = solana_token_client

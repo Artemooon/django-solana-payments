@@ -15,6 +15,12 @@ Installation
 
         pip install "django-solana-payments[drf]"
 
+    For `django-payments` integration support, install the `django-payments` extra:
+
+    .. code-block:: bash
+
+        pip install "django-solana-payments[django-payments]"
+
 2.  **Configure `settings.py`**
 
     .. code-block:: python
@@ -99,3 +105,5 @@ For common flows you can import the root helpers directly:
     )
 
 For explicit service classes, see :doc:`api_reference`.
+
+For async-capable usage and `AsyncClient` details, see :doc:`async_support`.
