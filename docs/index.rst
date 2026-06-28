@@ -12,6 +12,7 @@ Key Features
 ------------
 
 -   **Transaction verification and automatic payment confirmation**: Monitors the Solana blockchain, verifies incoming transactions, and automatically confirms payments when the expected amount is received.
+-   **Built-in Solana payment widget**: Render a reusable solana payment widget with QR code and crypto wallet connection.
 -   **Multi-token support (SOL and SPL tokens)**: Configure a list of active payment tokens (for example, SOL and USDC) and the library will use them for pricing and verification flows.
 -   **Flexibility and customization**: Use your own custom models for payments and tokens to fit your project's needs. Add custom logic using signals or callabacks.
 -   **Ease of integration**: Provides ready-to-use endpoints that can be used in existing DRF applications, or ready-to-use methods for Django applications that are not part of DRF.
@@ -25,6 +26,21 @@ Security Note
 `django-solana-payments` does not send your wallet keypairs or secret keys to any third-party services.
 All wallet security controls, key management, maintenance policies, and security audits remain the responsibility of the user-facing application and its infrastructure.
 See the full `Disclaimer <https://github.com/Artemooon/django-solana-payments/blob/main/DISCLAIMER.md>`_.
+
+RPC Client Configuration
+------------------------
+
+`django-solana-payments` uses `solana.rpc.async_api.AsyncClient` under the hood, as `solana-py removed support for the sync client <https://michaelhly.com/solana-py/rpc/api/>`_, while
+keeping a sync-friendly API for Django projects.
+
+Common RPC options can be configured through `SOLANA_PAYMENTS`, including:
+
+- `RPC_TIMEOUT`
+- `RPC_EXTRA_HEADERS`
+- `RPC_PROXY`
+- `RPC_RATE_LIMIT`
+
+For full setup examples, see :doc:`installation`.
 
 How It Works
 ------------
@@ -77,6 +93,7 @@ If you discover any additional ways to optimize costs, please let us know.
    payment_hooks
    management_commands
    one_time_wallets_encryption
+   frontend_widget_configuration
    api_reference
 
 

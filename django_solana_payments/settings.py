@@ -33,6 +33,22 @@ class SolanaPaymentsSettings:
         return self._get_setting("RPC_COMMITMENT", default=Confirmed)
 
     @property
+    def RPC_TIMEOUT(self) -> float:
+        return self._get_setting("RPC_TIMEOUT", default=10)
+
+    @property
+    def RPC_EXTRA_HEADERS(self) -> dict[str, str] | None:
+        return self._get_setting("RPC_EXTRA_HEADERS", default=None)
+
+    @property
+    def RPC_PROXY(self) -> str | None:
+        return self._get_setting("RPC_PROXY", default=None)
+
+    @property
+    def RPC_RATE_LIMIT(self) -> float:
+        return self._get_setting("RPC_RATE_LIMIT", default=0)
+
+    @property
     def PAYMENT_ACCEPTANCE_COMMITMENT(self) -> Commitment:
         return self._get_setting("PAYMENT_ACCEPTANCE_COMMITMENT", default=Confirmed)
 

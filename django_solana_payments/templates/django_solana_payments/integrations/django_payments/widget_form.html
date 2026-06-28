@@ -1,0 +1,6 @@
+{% load solana_payment_widget %}
+<div class="spw-django-payments-form" data-payment-token="{{ payment.token }}">
+  <link rel="stylesheet" href="{{ form.widget_css_url }}">
+  {% render_solana_payment_widget form.widget_config form.mount_id %}
+  <script type="module" src="{{ form.widget_js_url }}"></script>
+</div>

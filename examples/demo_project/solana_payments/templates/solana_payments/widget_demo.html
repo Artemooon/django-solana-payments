@@ -1,0 +1,39 @@
+{% load static %}
+{% load solana_payment_widget %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Solana Payment Widget Demo</title>
+    <link rel="stylesheet" href="{% static 'payments/demo-widget.css' %}">
+    <link rel="stylesheet" href="{% static 'solana_payments/solana-payment-widget/widget.css' %}?v={{ widget_asset_version }}">
+  </head>
+  <body>
+    <main class="demo-shell">
+      <section class="demo-copy">
+        <p class="demo-theme-tag">{{ theme_name }} theme</p>
+        <h1>{{ page_title }}</h1>
+        <p>
+          {{ page_description }}
+        </p>
+        <nav class="demo-theme-nav" aria-label="Theme examples">
+          <a href="{% url 'widget-demo' %}">Default demo</a>
+          <a href="{% url 'widget-demo-editorial' %}">Editorial demo</a>
+          {# Add more demo theme links here. #}
+        </nav>
+      </section>
+      <section class="demo-widget">
+        {% if error_message %}
+          <div class="demo-error-card">
+            <strong>Demo payment could not be created.</strong>
+            <p>Configure Solana settings and at least one active payment token, then reload the page.</p>
+          </div>
+        {% else %}
+          {% render_solana_payment_widget widget_config "demo-solana-widget" %}
+        {% endif %}
+      </section>
+    </main>
+    <script type="module" src="{% static 'solana_payments/solana-payment-widget/widget.js' %}?v={{ widget_asset_version }}"></script>
+  </body>
+  </html>

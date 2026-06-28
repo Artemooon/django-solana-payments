@@ -11,6 +11,7 @@ A Django library for integrating Solana payments into your project. This library
 ## Key Features
 
 -   **Transaction verification and automatic payment confirmation**: Monitors the Solana blockchain, verifies incoming transactions, and automatically confirms payments when the expected amount is received.
+-   **Built-in Solana payment widget**: Render a reusable solana payment widget with QR code and crypto wallet connection.
 -   **Multi-token support (SOL and SPL tokens)**: Configure a list of active payment tokens (for example, SOL and USDC) and the library will use them for pricing and verification flows.
 -   **Flexibility and customization**: Use your own custom models for payments and tokens to fit your project's needs. Add custom logic using signals or callabacks.
 -   **Ease of integration**: Provides ready-to-use endpoints that can be used in existing DRF applications, or ready-to-use methods for Django applications that are not part of DRF.
@@ -46,10 +47,14 @@ See the full documentation at https://django-solana-payments.readthedocs.io/
         "RECEIVER_ADDRESS": "YOUR_WALLET_ADDRESS", # Wallet that receives funds
         "FEE_PAYER_KEYPAIR": "WALLET_KEYPAIR", # Wallet keypair that pays network fees (address will be derived from the keypair)
         # FEE_PAYER_ADDRESS is derived from FEE_PAYER_KEYPAIR; you don't normally need to set it separately.
-        "ONE_TIME_WALLETS_ENCRYPTION_ENABLED": True, # Enables encryption for one-time payments wallets
+        "RPC_TIMEOUT": 10, # Optional AsyncClient timeout in seconds
+        "RPC_EXTRA_HEADERS": None, # Optional dict of extra RPC headers
+        "RPC_PROXY": None, # Optional proxy URL
+        "RPC_RATE_LIMIT": 0, # Optional AsyncClient rate limit; 0 disables limiter
+        "ONE_TIME_WALLETS_ENCRYPTION_ENABLED": True, # Enables encryption for one-time solana_payments wallets
         "ONE_TIME_WALLETS_ENCRYPTION_KEY": "ONE_TIME_WALLETS_ENCRYPTION_KEY", # Generate with the Fernet.generate_key()
-        "SOLANA_PAYMENT_MODEL": "payments.CustomSolanaPayment", # Custom model for solana payment
-        "PAYMENT_CRYPTO_TOKEN_MODEL": "payments.CustomPaymentToken", # Custom model for solana payment token
+        "SOLANA_PAYMENT_MODEL": "solana_payments.CustomSolanaPayment", # Custom model for solana payment
+        "PAYMENT_CRYPTO_TOKEN_MODEL": "solana_payments.CustomPaymentToken", # Custom model for solana payment token
         "RPC_COMMITMENT": "Confirmed", # RPC Commitment
         "PAYMENT_ACCEPTANCE_COMMITMENT": "Confirmed", # Commitment for payment acceptance
         "MAX_ATAS_PER_TX": 8, # Max associated token accounts to create/close per transaction (needed for oen time wallets creation)
@@ -85,6 +90,7 @@ Typical API flow:
 
 Common UI examples:
 
+- Use the built-in Solana payment widget -> render QR code, wallet actions, token selection, and verification flow on your payment page.
 - Connect crypto wallet -> show payment summary in the wallet extension -> user signs and sends transaction -> app checks payment status.
 - Open wallet app (Phantom/Solflare/mobile wallet) -> scan the QR code -> send expected amount -> return to your app -> app payment checks status.
 
@@ -93,6 +99,8 @@ Optionally call `GET /solana-payments/payments/{payment_address}/` for details.
 ## Demo 
 
 [![Postman demo](./docs/assets/postman-demo.gif)](./docs/assets/postman-demo.gif)
+
+Release history and upgrade notes can be found in [CHANGELOG.md](./CHANGELOG.md).
 
 ## Running the Example Project
 
@@ -166,6 +174,13 @@ If you find this project useful, consider giving it a star to support its develo
 
    ```bash
    pytest
+   ```
+
+4. Build docs locally:
+
+   ```bash
+   cd docs
+   make html
    ```
 
 ### Install pre-commit

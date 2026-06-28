@@ -131,7 +131,7 @@ Remember to import your signals in your app's `apps.py` file to ensure they are 
         def ready(self):
             import your_app.signals  # noqa
 
-All examples can be found in the `demo project <https://github.com/Artemooon/django-solana-payments/blob/main/examples/demo_project/payments/signals.py>`_
+All examples can be found in the `demo project <https://github.com/Artemooon/django-solana-payments/blob/main/examples/demo_project/solana_payments/signals.py>`_
 
 Using the `on_success` Callback
 -------------------------------
@@ -152,18 +152,29 @@ Current behavior:
 
 .. code-block:: python
 
-    from django_solana_payments.services import VerifyTransactionService
+    from django_solana_payments import verify_transaction_and_process_payment
 
     def my_success_callback(payment, transaction_status):
         print(f"Payment {payment.id} was successful with status {transaction_status}!")
         # Add any other custom logic here
 
-    # When calling the service
-    verify_service = VerifyTransactionService()
-    verify_service.verify_transaction_and_process_payment(
+    verify_transaction_and_process_payment(
          payment_address="...",
          payment_crypto_token=my_token,
          on_success=my_success_callback
     )
 
 This approach is useful for synchronous tasks or when you want to handle the logic in the same part of the code that initiates the verification.
+
+You can still use the explicit service class when you need it:
+
+.. code-block:: python
+
+    from django_solana_payments import VerifyTransactionService
+
+    verify_service = VerifyTransactionService()
+    verify_service.verify_transaction_and_process_payment(
+        payment_address="...",
+        payment_crypto_token=my_token,
+        on_success=my_success_callback,
+    )

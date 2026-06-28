@@ -39,7 +39,7 @@ Database prerequisites
 2. If you use custom token models, make sure your custom app is included in `INSTALLED_APPS` and `SOLANA_PAYMENTS` settings points to your model path, for example::
 
     SOLANA_PAYMENTS = {
-        "PAYMENT_CRYPTO_TOKEN_MODEL": "payments.CustomPaymentToken",
+        "PAYMENT_CRYPTO_TOKEN_MODEL": "solana_payments.CustomPaymentToken",
         # ... other settings
     }
 
@@ -107,5 +107,4 @@ Troubleshooting
 
 - If you see a `ValidationError` when saving a token, verify the `token_type` and `mint_address` values match the rules described above.
 - If the API shows no tokens, ensure `is_active=True` and the object is saved in the correct database and app.
-
 

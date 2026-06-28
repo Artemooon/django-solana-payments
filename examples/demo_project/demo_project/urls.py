@@ -17,8 +17,27 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import include, path
+from solana_payments.views import (
+    checkout,
+    payment_details,
+    payment_failure,
+    payment_success,
+    widget_demo,
+    widget_demo_editorial,
+)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("", widget_demo, name="widget-demo"),
+    path("themes/editorial/", widget_demo_editorial, name="widget-demo-editorial"),
+    path("django-payments/", checkout, name="django-payments-checkout"),
+    path("payments/", include("payments.urls")),
+    path("django-payments/<uuid:token>/", payment_details, name="payment-details"),
+    path(
+        "django-payments/<uuid:token>/success/", payment_success, name="payment-success"
+    ),
+    path(
+        "django-payments/<uuid:token>/failure/", payment_failure, name="payment-failure"
+    ),
     path("api/solana/", include("django_solana_payments.urls")),
 ]

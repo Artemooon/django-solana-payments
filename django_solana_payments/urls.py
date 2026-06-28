@@ -33,9 +33,11 @@ router.register("payments-tokens", AllowedPaymentCryptoTokenViewSet)
 
 urlpatterns = [
     path(
-        "verify-transfer/<str:payment_address>", VerifySolanaPayTransferView.as_view()
+        "verify-transfer/<str:payment_address>",
+        VerifySolanaPayTransferView.as_view(),
+        name="verify-transfer",
     ),
-    path("initiate/", InitiateSolanaPayment.as_view()),
+    path("initiate/", InitiateSolanaPayment.as_view(), name="initiate-payment"),
 ]
 
 urlpatterns += router.urls
