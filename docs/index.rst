@@ -6,7 +6,7 @@
 Welcome to django-solana-payments's documentation!
 ==================================================
 
-A plug-and-play Django library for accepting online payments via the Solana blockchain.
+A Django library for accepting self-hosted online payments via the Solana blockchain.
 
 Key Features
 ------------
