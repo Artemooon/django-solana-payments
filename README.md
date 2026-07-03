@@ -6,6 +6,8 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/django-solana-payments.svg)]( https://pypi.python.org/pypi/django-solana-payments)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Artemooon/django-solana-payments/blob/main/LICENSE)
 
+[![UI widget demo](./docs/assets/UI-widget-demo.gif)](./docs/assets/UI-widget-demo.gif) 
+
 A Django library for accepting self-hosted online payments via the Solana blockchain. It provides payment verification logic and a reusable frontend widget for running self-hosted Solana payment infrastructure inside your Django project.
 Under the hood, it builds on the open source [solana-py](https://github.com/michaelhly/solana-py) library for interacting with the Solana blockchain.
 
@@ -112,30 +114,6 @@ urlpatterns = [
 ```
 
 6. **Open the admin panel and create payment token records, specifying the correct mint addresses for SPL tokens.**
-
-## Integration in 3 simple steps
-
-Start accepting Solana payments with a fast, production-ready flow designed for real checkout UX.
-
-### Integration flow
-
-Typical API flow:
-
-1. Call `POST /solana-payments/initiate/` to create a payment and receive `payment_address`.
-2. Show that address/QR code to the payer, then the payer sends funds to the `payment_address`.
-3. Poll `GET /solana-payments/verify-transfer/{payment_address}?token_type=...` until status becomes `confirmed` or `finalized`.
-
-Common UI examples:
-
-- Use the built-in Solana payment widget -> render QR code, wallet actions, token selection, and verification flow on your payment page.
-- Connect crypto wallet -> show payment summary in the wallet extension -> user signs and sends transaction -> app checks payment status.
-- Open wallet app (Phantom/Solflare/mobile wallet) -> scan the QR code -> send expected amount -> return to your app -> app payment checks status.
-
-Optionally call `GET /solana-payments/payments/{payment_address}/` for details.
-
-## Demo 
-
-[![Postman demo](./docs/assets/postman-demo.gif)](./docs/assets/postman-demo.gif)
 
 Release history and upgrade notes can be found in [CHANGELOG.md](./CHANGELOG.md).
 
