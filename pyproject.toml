@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "django-solana-payments"
-version = "0.2.2"
+version = "1.0.0"
 description = "A Django library for accepting self-hosted online payments via the Solana blockchain"
 authors = [
     { name = "Artemooon", email = "artiom.logachiov@gmail.com" }
