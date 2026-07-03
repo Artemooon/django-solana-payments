@@ -163,15 +163,17 @@ def test_close_one_time_wallet_atas_closes_only_zero_balance_accounts(
             "get_associated_token_address",
             side_effect=[ata1, ata2],
         ),
-        patch(
-            "django_solana_payments.services.one_time_wallet_service.base_solana_client.http_client.get_account_info",
+        patch.object(
+            service.solana_token_client,
+            "get_account_info",
             side_effect=[
                 SimpleNamespace(value=SimpleNamespace(owner=owner)),
                 SimpleNamespace(value=SimpleNamespace(owner=owner)),
             ],
         ),
-        patch(
-            "django_solana_payments.services.one_time_wallet_service.base_solana_client.http_client.get_token_account_balance",
+        patch.object(
+            service.solana_token_client,
+            "get_token_account_balance",
             side_effect=[
                 SimpleNamespace(value=SimpleNamespace(amount="0")),
                 SimpleNamespace(value=SimpleNamespace(amount="9")),
@@ -219,8 +221,9 @@ def test_close_one_time_wallet_atas_returns_true_when_no_ata_is_eligible(
             "get_associated_token_address",
             return_value=Keypair().pubkey(),
         ),
-        patch(
-            "django_solana_payments.services.one_time_wallet_service.base_solana_client.http_client.get_account_info",
+        patch.object(
+            service.solana_token_client,
+            "get_account_info",
             return_value=SimpleNamespace(value=None),
         ),
         patch.object(

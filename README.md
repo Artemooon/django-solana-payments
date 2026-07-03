@@ -6,11 +6,15 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/django-solana-payments.svg)]( https://pypi.python.org/pypi/django-solana-payments)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/Artemooon/django-solana-payments/blob/main/LICENSE)
 
-A Django library for integrating Solana payments into your project. This library provides a flexible and customizable way to accept Solana payments with support for customizable models, an easy-to-use API, and management commands for processing online payments using the Solana blockchain.
+[![UI widget demo](./docs/assets/UI-widget-demo.gif)](./docs/assets/UI-widget-demo.gif) 
+
+A Django library for accepting self-hosted online payments via the Solana blockchain. It provides payment verification logic and a reusable frontend widget for running self-hosted Solana payment infrastructure inside your Django project.
+Under the hood, it builds on the open source [solana-py](https://github.com/michaelhly/solana-py) library for interacting with the Solana blockchain.
 
 ## Key Features
 
 -   **Transaction verification and automatic payment confirmation**: Monitors the Solana blockchain, verifies incoming transactions, and automatically confirms payments when the expected amount is received.
+-   **Built-in Solana payment widget**: Render a reusable solana payment widget with QR code and crypto wallet connection.
 -   **Multi-token support (SOL and SPL tokens)**: Configure a list of active payment tokens (for example, SOL and USDC) and the library will use them for pricing and verification flows.
 -   **Flexibility and customization**: Use your own custom models for payments and tokens to fit your project's needs. Add custom logic using signals or callabacks.
 -   **Ease of integration**: Provides ready-to-use endpoints that can be used in existing DRF applications, or ready-to-use methods for Django applications that are not part of DRF.
@@ -28,28 +32,68 @@ See the full documentation at https://django-solana-payments.readthedocs.io/
     pip install django-solana-payments
     ```
 
-    For DRF support, which provides API endpoints for creating and managing payments, install the `drf` extra:
+    For DRF support endpoints support and correct frontend widget work, install the `drf` extra:
     ```bash
     pip install "django-solana-payments[drf]"
     ```
     This provides ready-to-use API endpoints for creating and managing payments.
 
-2.  **Configure `settings.py`**
+    For `django-payments` integration support, install the `django-payments` extra:
+    ```bash
+    pip install "django-solana-payments[django-payments]"
+    ```
+    This provides the `django-payments` provider and checkout widget integration.
+
+2.  **Add the app to `INSTALLED_APPS`**
     ```python
     INSTALLED_APPS = [
         ...,
         'django_solana_payments',
     ]
+    ```
 
+3.  **Create custom payment models**
+    Create your own models that inherit from the library's abstract base models.
+
+    ```python
+    from django.db import models
+
+    from django_solana_payments.models import (
+        AbstractPaymentToken,
+        AbstractSolanaPayment,
+    )
+
+
+    class CustomSolanaPayment(AbstractSolanaPayment):
+        customer_id = models.CharField(max_length=255, blank=True, null=True)
+
+
+    class CustomPaymentToken(AbstractPaymentToken):
+        name = models.CharField(max_length=100)
+        symbol = models.CharField(max_length=10)
+    ```
+
+    See [docs/custom_models.rst](./docs/custom_models.rst) for more details.
+
+4.  **Configure `SOLANA_PAYMENTS`**
+    After creating your models, point `SOLANA_PAYMENTS` at those model paths and
+    configure the rest of the library settings.
+
+    ```python
     SOLANA_PAYMENTS = {
+        "SOLANA_PAYMENT_MODEL": "solana_payments.CustomSolanaPayment", # Custom model for solana payment
+        "PAYMENT_CRYPTO_TOKEN_MODEL": "solana_payments.CustomPaymentToken", # Custom model for solana payment token
+    
         "RPC_URL": "https://api.mainnet-beta.solana.com",
         "RECEIVER_ADDRESS": "YOUR_WALLET_ADDRESS", # Wallet that receives funds
         "FEE_PAYER_KEYPAIR": "WALLET_KEYPAIR", # Wallet keypair that pays network fees (address will be derived from the keypair)
         # FEE_PAYER_ADDRESS is derived from FEE_PAYER_KEYPAIR; you don't normally need to set it separately.
-        "ONE_TIME_WALLETS_ENCRYPTION_ENABLED": True, # Enables encryption for one-time payments wallets
+        "RPC_TIMEOUT": 10, # Optional AsyncClient timeout in seconds
+        "RPC_EXTRA_HEADERS": None, # Optional dict of extra RPC headers
+        "RPC_PROXY": None, # Optional proxy URL
+        "RPC_RATE_LIMIT": 0, # Optional AsyncClient rate limit; 0 disables limiter
+        "ONE_TIME_WALLETS_ENCRYPTION_ENABLED": True, # Enables encryption for one-time solana_payments wallets
         "ONE_TIME_WALLETS_ENCRYPTION_KEY": "ONE_TIME_WALLETS_ENCRYPTION_KEY", # Generate with the Fernet.generate_key()
-        "SOLANA_PAYMENT_MODEL": "payments.CustomSolanaPayment", # Custom model for solana payment
-        "PAYMENT_CRYPTO_TOKEN_MODEL": "payments.CustomPaymentToken", # Custom model for solana payment token
         "RPC_COMMITMENT": "Confirmed", # RPC Commitment
         "PAYMENT_ACCEPTANCE_COMMITMENT": "Confirmed", # Commitment for payment acceptance
         "MAX_ATAS_PER_TX": 8, # Max associated token accounts to create/close per transaction (needed for oen time wallets creation)
@@ -57,7 +101,7 @@ See the full documentation at https://django-solana-payments.readthedocs.io/
     }
     ```
 
-3.  **Migrate and Route**
+5.  **Migrate and Route**
 ```bash
 python manage.py migrate
 ```
@@ -69,30 +113,9 @@ urlpatterns = [
 ]
 ```
 
-4. **Open the admin panel and create payment token records, specifying the correct mint addresses for SPL tokens.**
+6. **Open the admin panel and create payment token records, specifying the correct mint addresses for SPL tokens.**
 
-## Integration in 3 simple steps
-
-Start accepting Solana payments with a fast, production-ready flow designed for real checkout UX.
-
-### Integration flow
-
-Typical API flow:
-
-1. Call `POST /solana-payments/initiate/` to create a payment and receive `payment_address`.
-2. Show that address/QR code to the payer, then the payer sends funds to the `payment_address`.
-3. Poll `GET /solana-payments/verify-transfer/{payment_address}?token_type=...` until status becomes `confirmed` or `finalized`.
-
-Common UI examples:
-
-- Connect crypto wallet -> show payment summary in the wallet extension -> user signs and sends transaction -> app checks payment status.
-- Open wallet app (Phantom/Solflare/mobile wallet) -> scan the QR code -> send expected amount -> return to your app -> app payment checks status.
-
-Optionally call `GET /solana-payments/payments/{payment_address}/` for details.
-
-## Demo 
-
-[![Postman demo](./docs/assets/postman-demo.gif)](./docs/assets/postman-demo.gif)
+Release history and upgrade notes can be found in [CHANGELOG.md](./CHANGELOG.md).
 
 ## Running the Example Project
 
@@ -166,6 +189,13 @@ If you find this project useful, consider giving it a star to support its develo
 
    ```bash
    pytest
+   ```
+
+4. Build docs locally:
+
+   ```bash
+   cd docs
+   make html
    ```
 
 ### Install pre-commit

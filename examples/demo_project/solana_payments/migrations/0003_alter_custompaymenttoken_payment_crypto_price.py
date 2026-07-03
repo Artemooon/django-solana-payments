@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("payments", "0002_alter_customsolanapayment_paid_token"),
+        ("solana_payments", "0002_alter_customsolanapayment_paid_token"),
     ]
 
     operations = [

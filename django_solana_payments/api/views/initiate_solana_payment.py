@@ -23,8 +23,6 @@ class InitiateSolanaPayment(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
 
         payment_data = serializer.validated_data
-        if request.user.is_authenticated:
-            payment_data["user"] = request.user
 
         try:
             payment = SolanaPaymentsService().create_payment(payment_data)

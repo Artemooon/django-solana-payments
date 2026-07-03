@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from django.utils import timezone
-from solders.pubkey import Pubkey
 from solders.signature import Signature
 from solders.solders import GetTransactionResp, TransactionConfirmationStatus
 
@@ -76,7 +75,7 @@ class TestVerifyTransactionAndProcessPayment:
     def test_payment_expired(
         self, _mock_on_commit, mock_signal, expired_payment, payment_token
     ):
-        """Test that PaymentExpiredError is raised for expired payments."""
+        """Test that PaymentExpiredError is raised for expired solana_payments."""
         service = VerifyTransactionService()
         mock_signal.send_robust.return_value = []
 
@@ -212,10 +211,7 @@ class TestVerifyTransactionAndProcessPayment:
         mock_query_client.get_transactions_for_address.return_value = [mock_transaction]
 
         # Mock fee payer to not be sender address
-        mock_fee_payer = Pubkey.from_string("2" * 44)
-        mock_query_client.extract_fee_payer_from_transaction_details.return_value = (
-            mock_fee_payer
-        )
+        mock_query_client.is_one_time_wallet_setup_transaction.return_value = False
 
         mock_query_client_class.return_value = mock_query_client
 
@@ -282,10 +278,7 @@ class TestVerifyTransactionAndProcessPayment:
         mock_query_client.get_transactions_for_address.return_value = [mock_transaction]
 
         # Mock fee payer to not be sender address
-        mock_fee_payer = Pubkey.from_string("2" * 44)
-        mock_query_client.extract_fee_payer_from_transaction_details.return_value = (
-            mock_fee_payer
-        )
+        mock_query_client.is_one_time_wallet_setup_transaction.return_value = False
 
         mock_query_client_class.return_value = mock_query_client
 
@@ -367,9 +360,7 @@ class TestVerifyTransactionAndProcessPayment:
         mock_tx_status.confirmation_status = TransactionConfirmationStatus.Confirmed
         mock_query_client.get_signatures_statuses.return_value = [mock_tx_status]
         mock_query_client.get_transactions_for_address.return_value = [mock_transaction]
-        mock_query_client.extract_fee_payer_from_transaction_details.return_value = (
-            Pubkey.from_string("2" * 44)
-        )
+        mock_query_client.is_one_time_wallet_setup_transaction.return_value = False
         mock_query_client_class.return_value = mock_query_client
         mock_signal.send_robust.return_value = []
 
@@ -435,9 +426,7 @@ class TestVerifyTransactionAndProcessPayment:
         mock_tx_status.confirmation_status = TransactionConfirmationStatus.Confirmed
         mock_query_client.get_signatures_statuses.return_value = [mock_tx_status]
         mock_query_client.get_transactions_for_address.return_value = [mock_transaction]
-        mock_query_client.extract_fee_payer_from_transaction_details.return_value = (
-            Pubkey.from_string("2" * 44)
-        )
+        mock_query_client.is_one_time_wallet_setup_transaction.return_value = False
         mock_query_client_class.return_value = mock_query_client
 
         mock_signal.send_robust.return_value = [
@@ -502,9 +491,7 @@ class TestVerifyTransactionAndProcessPayment:
         mock_tx_status.confirmation_status = TransactionConfirmationStatus.Confirmed
         mock_query_client.get_signatures_statuses.return_value = [mock_tx_status]
         mock_query_client.get_transactions_for_address.return_value = [mock_transaction]
-        mock_query_client.extract_fee_payer_from_transaction_details.return_value = (
-            Pubkey.from_string("2" * 44)
-        )
+        mock_query_client.is_one_time_wallet_setup_transaction.return_value = False
         mock_query_client_class.return_value = mock_query_client
         mock_signal.send_robust.return_value = []
 
@@ -573,9 +560,7 @@ class TestVerifyTransactionAndProcessPayment:
         mock_tx_status.confirmation_status = TransactionConfirmationStatus.Confirmed
         mock_query_client.get_signatures_statuses.return_value = [mock_tx_status]
         mock_query_client.get_transactions_for_address.return_value = [mock_transaction]
-        mock_query_client.extract_fee_payer_from_transaction_details.return_value = (
-            Pubkey.from_string("2" * 44)
-        )
+        mock_query_client.is_one_time_wallet_setup_transaction.return_value = False
         mock_query_client_class.return_value = mock_query_client
 
         solana_payment.crypto_prices.add(payment_crypto_price)
@@ -638,9 +623,7 @@ class TestVerifyTransactionAndProcessPayment:
         mock_tx_status.confirmation_status = TransactionConfirmationStatus.Confirmed
         mock_query_client.get_signatures_statuses.return_value = [mock_tx_status]
         mock_query_client.get_transactions_for_address.return_value = [mock_transaction]
-        mock_query_client.extract_fee_payer_from_transaction_details.return_value = (
-            Pubkey.from_string("2" * 44)
-        )
+        mock_query_client.is_one_time_wallet_setup_transaction.return_value = False
         mock_query_client_class.return_value = mock_query_client
         mock_signal.send_robust.return_value = []
         solana_payment.crypto_prices.add(payment_crypto_price)

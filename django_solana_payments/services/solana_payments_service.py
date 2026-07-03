@@ -212,7 +212,7 @@ class SolanaPaymentsService:
         )
 
         logger.info(
-            "Marked %s expired payments and their wallets.",
+            "Marked %s expired solana_payments and their wallets.",
             total_not_finished_payments,
         )
 

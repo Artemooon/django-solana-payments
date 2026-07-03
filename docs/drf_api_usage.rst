@@ -18,6 +18,8 @@ If your project uses:
 
 Then the endpoints below are available under the `/solana-payments/` prefix.
 
+.. _drf_api_integration_flow:
+
 Integration flow
 -------
 
@@ -35,10 +37,8 @@ Typical API flow:
 3. Poll `GET /solana-payments/verify-transfer/{payment_address}?token_type=...` until status becomes `confirmed` or `finalized`.
 4. Optionally call `GET /solana-payments/payments/{payment_address}/` for details.
 
-.. note::
-
-   The library author plans to add a long-polling payment status endpoint in the near future.
-   Until then, use short-interval polling from your backend or frontend.
+If you use the reusable frontend widget, you can give it the API base URL and let the widget perform this flow automatically.
+See :ref:`Recommended API-driven setup <frontend_widget_recommended_api_driven_setup>`.
 
 1. Create Payment
 -----------------

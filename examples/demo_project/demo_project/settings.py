@@ -32,6 +32,8 @@ SECRET_KEY = "django-insecure-obsu9%=2!=rff!fdk)7yq@$hk8a5k9@m!us*y$9484!ksr&ob9
 DEBUG = True
 
 ALLOWED_HOSTS = []
+PAYMENT_HOST = "http://127.0.0.1:8000"
+PAYMENT_MODEL = "solana_payments.CheckoutPayment"
 
 
 # Application definition
@@ -45,6 +47,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_solana_payments",
     "payments",
+    "solana_payments.apps.SolanaPaymentsConfig",
 ]
 
 MIDDLEWARE = [
@@ -138,9 +141,19 @@ SOLANA_PAYMENTS = {
     "ONE_TIME_WALLETS_ENCRYPTION_KEY": os.environ.get(
         "ONE_TIME_WALLETS_ENCRYPTION_KEY"
     ),
-    "SOLANA_PAYMENT_MODEL": "payments.CustomSolanaPayment",
-    "PAYMENT_CRYPTO_TOKEN_MODEL": "payments.CustomPaymentToken",
+    "SOLANA_PAYMENT_MODEL": "solana_payments.CustomSolanaPayment",
+    "PAYMENT_CRYPTO_TOKEN_MODEL": "solana_payments.CustomPaymentToken",
     "RPC_COMMITMENT": Confirmed,
     "PAYMENT_ACCEPTANCE_COMMITMENT": Confirmed,
     "PAYMENT_VALIDITY_SECONDS": 30 * 60,  # default: 30 minutes
+}
+
+PAYMENT_VARIANTS = {
+    "solana": (
+        "django_solana_payments.integrations.django_payments.SolanaPaymentsProvider",
+        {
+            "rpc_url": "https://api.devnet.solana.com",
+            "supported_wallets": ["phantom", "solflare"],
+        },
+    ),
 }

@@ -423,21 +423,19 @@ class VerifyTransactionService:
                 address=target_address
             )
         )
-        # Exclude transactions sent by the configured sender
+        # Ignore one-time wallet setup transactions so they cannot be mistaken for payments.
         recipient_wallet_transactions: list[GetTransactionResp] = []
         for tx in all_transactions:
-            fee_payer = self.solana_transaction_query_client.extract_fee_payer_from_transaction_details(
+            if self.solana_transaction_query_client.is_one_time_wallet_setup_transaction(
                 tx
-            )
-            if fee_payer:
-                if fee_payer == Pubkey.from_string(
-                    solana_payments_settings.FEE_PAYER_ADDRESS
-                ):
-                    logger.warning(
-                        f"Ignoring transaction {tx.value.transaction.transaction.signatures} because fee payer is FEE_PAYER_ADDRESS"
-                    )
-                else:
-                    recipient_wallet_transactions.append(tx)
+            ):
+                logger.warning(
+                    "Ignoring transaction %s because it contains one-time wallet setup instructions",
+                    tx.value.transaction.transaction.signatures,
+                )
+                continue
+
+            recipient_wallet_transactions.append(tx)
 
         if recipient_wallet_transactions and expected_amount > balance:
             logger.error(

@@ -1,17 +1,12 @@
 import logging
+from contextlib import asynccontextmanager
 
-import httpx
-import stamina
-from solana.exceptions import SolanaRpcException
-from solana.rpc.api import Client
-from solana.rpc.commitment import Commitment
+from asgiref.sync import async_to_sync
+from solana.rpc.async_api import AsyncClient
 from solders.keypair import Keypair
-from solders.signature import Signature
-from solders.solders import Transaction
 from spl.token.constants import NATIVE_DECIMALS
 
 from django_solana_payments.settings import solana_payments_settings
-from django_solana_payments.solana.dtos import ConfirmTransactionDTO
 from django_solana_payments.solana.utils import parse_keypair
 
 solana_client_logger = logging.getLogger(__name__)
@@ -19,12 +14,9 @@ solana_client_logger = logging.getLogger(__name__)
 
 class BaseSolanaClient:
 
-    def __init__(self, rpc_url: str = None):
+    def __init__(self, rpc_url: str = None, client_factory=None):
         self._rpc_url = self._build_rpc_url(rpc_url)
-        self._http_client = Client(
-            endpoint=self._rpc_url,
-            commitment=solana_payments_settings.RPC_COMMITMENT,
-        )
+        self._client_factory = client_factory or self._default_client_factory
         self.LAMPORTS_PER_SOL = 10**NATIVE_DECIMALS
 
     @staticmethod
@@ -54,69 +46,32 @@ class BaseSolanaClient:
                 f"Error: {e}"
             )
 
-    @property
-    def http_client(self):
-        return self._http_client
+    def _default_client_factory(self) -> AsyncClient:
+        return AsyncClient(
+            endpoint=self._rpc_url,
+            commitment=solana_payments_settings.RPC_COMMITMENT,
+            timeout=solana_payments_settings.RPC_TIMEOUT,
+            extra_headers=solana_payments_settings.RPC_EXTRA_HEADERS,
+            proxy=solana_payments_settings.RPC_PROXY,
+            rate_limit=solana_payments_settings.RPC_RATE_LIMIT,
+        )
+
+    @asynccontextmanager
+    async def http_client(self):
+        client = self._client_factory()
+        try:
+            yield client
+        finally:
+            await client.close()
+
+    def run_sync_from_async(self, async_callable, *args, **kwargs):
+        return async_to_sync(async_callable)(*args, **kwargs)
 
     def generate_keypair(self) -> Keypair:
         return Keypair()
 
-    def confirm_transaction(
-        self,
-        tx_signature: Signature,
-        commitment: Commitment = solana_payments_settings.RPC_COMMITMENT,
-    ) -> ConfirmTransactionDTO | None:
-        if commitment is None:
-            commitment = solana_payments_settings.RPC_COMMITMENT
-
-        transaction_confirmation = self.http_client.confirm_transaction(
-            tx_signature, commitment=commitment
-        )
-        transaction_confirmation_data = transaction_confirmation.value
-        solana_client_logger.info(
-            f"Transaction with signature: {str(tx_signature)} was confirmed"
-        )
-
-        if not transaction_confirmation_data:
-            solana_client_logger.error(
-                f"Transaction with signature: {str(tx_signature)} was not confirmed"
-            )
-            return ConfirmTransactionDTO(tx_signature=tx_signature)
-
-        return ConfirmTransactionDTO(
-            confirmation_status=transaction_confirmation.value[
-                len(transaction_confirmation_data) - 1
-            ].confirmation_status,
-            tx_signature=tx_signature,
-        )
-
-    @stamina.retry(
-        on=(SolanaRpcException, httpx.HTTPStatusError, httpx.RequestError),
-        attempts=5,
-        wait_initial=1.0,
-        wait_max=5.0,
-    )
-    def send_transaction_with_retry(self, transaction: Transaction) -> Signature:
-        """
-        Sends a transaction with retries on network errors.
-        """
-        try:
-            sent_transaction = self.http_client.send_transaction(transaction)
-            return sent_transaction.value
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 429:
-                solana_client_logger.warning(
-                    "Rate limit reached while sending transaction — will retry"
-                )
-            else:
-                solana_client_logger.warning(f"send_transaction error: {str(e)}")
-            raise
-        except (SolanaRpcException, httpx.RequestError) as e:
-            solana_client_logger.warning(f"send_transaction error: {e}")
-            raise
-        except Exception as e:
-            solana_client_logger.error(f"An unexpected error occurred: {e}")
-            raise
+    async def aclose(self):
+        return None
 
 
 base_solana_client = BaseSolanaClient()

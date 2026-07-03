@@ -35,7 +35,7 @@ def test_initiate_payment_guest_user_returns_payment_address(api_client, payment
     assert payment.status == SolanaPaymentStatusTypes.INITIATED
 
 
-def test_initiate_payment_authenticated_user_overrides_payload_user(
+def test_initiate_payment_authenticated_user_accepts_payload_user(
     api_client, user, payment_token
 ):
     User = get_user_model()
@@ -61,7 +61,7 @@ def test_initiate_payment_authenticated_user_overrides_payload_user(
     payment = SolanaPayment.objects.get(
         payment_address=response.data["payment_address"]
     )
-    assert payment.user == user
+    assert payment.user == another_user
     assert payment.label == "Premium"
     assert payment.message == "Payment test"
     assert payment.meta_data == {"order_id": "42"}

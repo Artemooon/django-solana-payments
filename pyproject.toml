@@ -5,24 +5,22 @@ build-backend = "poetry.core.masonry.api"
 [project]
 name = "django-solana-payments"
 version = "0.2.2"
-description = "A plug-and-play Django library for accepting online payments via the Solana blockchain"
+description = "A Django library for accepting self-hosted online payments via the Solana blockchain"
 authors = [
     { name = "Artemooon", email = "artiom.logachiov@gmail.com" }
 ]
 license = {text = "MIT"}
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 keywords = ["payments", "solana", "e-commerce"]
 classifiers = [
     "Environment :: Web Environment",
     "Framework :: Django",
-    "Framework :: Django :: 4.2",
     "Framework :: Django :: 5.2",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -32,8 +30,8 @@ classifiers = [
 ]
 
 dependencies = [
-    "Django>=4.2",
-    "solana>=0.36.10",
+    "Django>=5.2",
+    "solana>=0.39.0",
     "solders>=0.18.0",
     "stamina>=23.1.0",
     "httpx>=0.24.0",
@@ -42,6 +40,7 @@ dependencies = [
 
 [project.optional-dependencies]
 drf = ["djangorestframework >= 3.14"]
+django-payments = ["django-payments>=3.0"]
 dev = [
     "pytest>=9.0.2,<10.0.0",
     "pytest-django>=4.11.1,<5.0.0",

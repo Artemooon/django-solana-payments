@@ -29,10 +29,8 @@ def test_create_native_transaction_builds_message_and_transaction():
     fake_base = MagicMock()
     fake_base.LAMPORTS_PER_SOL = 1_000_000_000
     fake_base.BASE_SENDER_KEYPAIR = Keypair()
-    fake_base.http_client.get_latest_blockhash.return_value = (
-        _latest_blockhash_response()
-    )
     fake_token_client = MagicMock()
+    fake_token_client.get_latest_blockhash.return_value = _latest_blockhash_response()
 
     sender_keypair = Keypair()
     recipient = Pubkey.from_bytes(bytes([4] * 32))
@@ -50,16 +48,16 @@ def test_create_native_transaction_builds_message_and_transaction():
             "django_solana_payments.solana.solana_transaction_builder.transfer"
         ) as mock_transfer,
         patch(
-            "django_solana_payments.solana.solana_transaction_builder.Message"
-        ) as mock_message,
+            "django_solana_payments.solana.solana_transaction_builder.MessageV0.try_compile"
+        ) as mock_try_compile,
         patch(
-            "django_solana_payments.solana.solana_transaction_builder.Transaction"
-        ) as mock_transaction,
+            "django_solana_payments.solana.solana_transaction_builder.VersionedTransaction"
+        ) as mock_versioned_transaction,
     ):
         mock_transfer_params.return_value = "transfer_params"
         mock_transfer.return_value = "transfer_ix"
-        mock_message.return_value = "message_obj"
-        mock_transaction.return_value = "tx_obj"
+        mock_try_compile.return_value = "message_obj"
+        mock_versioned_transaction.return_value = "tx_obj"
 
         result = builder.create_native_transaction(
             recipient=recipient,
@@ -73,14 +71,15 @@ def test_create_native_transaction_builds_message_and_transaction():
         lamports=250000000,
     )
     mock_transfer.assert_called_once_with("transfer_params")
-    mock_message.assert_called_once_with(
+    mock_try_compile.assert_called_once_with(
         payer=fake_base.BASE_SENDER_KEYPAIR.pubkey(),
         instructions=["transfer_ix"],
+        address_lookup_table_accounts=[],
+        recent_blockhash=fake_token_client.get_latest_blockhash.return_value.value.blockhash,
     )
-    mock_transaction.assert_called_once_with(
-        message="message_obj",
-        from_keypairs=[sender_keypair, fake_base.BASE_SENDER_KEYPAIR],
-        recent_blockhash=fake_base.http_client.get_latest_blockhash.return_value.value.blockhash,
+    mock_versioned_transaction.assert_called_once_with(
+        "message_obj",
+        [sender_keypair, fake_base.BASE_SENDER_KEYPAIR],
     )
     assert result == "tx_obj"
 
@@ -88,19 +87,16 @@ def test_create_native_transaction_builds_message_and_transaction():
 def test_create_spl_token_transaction_builds_instruction_and_transaction():
     fake_base = MagicMock()
     fake_base.BASE_SENDER_KEYPAIR = Keypair()
-    fake_base.http_client.get_latest_blockhash.return_value = (
-        _latest_blockhash_response()
-    )
 
     token_program_id = Pubkey.from_bytes(bytes([1] * 32))
-    fake_base.http_client.get_account_info.return_value = SimpleNamespace(
+    fake_token_client = MagicMock()
+    fake_token_client.get_latest_blockhash.return_value = _latest_blockhash_response()
+    fake_token_client.get_account_info.return_value = SimpleNamespace(
         value=SimpleNamespace(owner=token_program_id)
     )
-    fake_base.http_client.get_token_supply.return_value = SimpleNamespace(
+    fake_token_client.get_token_supply.return_value = SimpleNamespace(
         value=SimpleNamespace(decimals=6)
     )
-
-    fake_token_client = MagicMock()
 
     sender_keypair = Keypair()
     recipient = Pubkey.from_bytes(bytes([2] * 32))
@@ -125,16 +121,16 @@ def test_create_spl_token_transaction_builds_instruction_and_transaction():
             "django_solana_payments.solana.solana_transaction_builder.spl_transfer"
         ) as mock_spl_transfer,
         patch(
-            "django_solana_payments.solana.solana_transaction_builder.Message"
-        ) as mock_message,
+            "django_solana_payments.solana.solana_transaction_builder.MessageV0.try_compile"
+        ) as mock_try_compile,
         patch(
-            "django_solana_payments.solana.solana_transaction_builder.Transaction"
-        ) as mock_transaction,
+            "django_solana_payments.solana.solana_transaction_builder.VersionedTransaction"
+        ) as mock_versioned_transaction,
     ):
         mock_spl_params.return_value = "spl_params"
         mock_spl_transfer.return_value = "spl_ix"
-        mock_message.return_value = "message_obj"
-        mock_transaction.return_value = "tx_obj"
+        mock_try_compile.return_value = "message_obj"
+        mock_versioned_transaction.return_value = "tx_obj"
 
         result = builder.create_spl_token_transaction(
             recipient=recipient,
@@ -157,14 +153,15 @@ def test_create_spl_token_transaction_builds_instruction_and_transaction():
         amount=1230000,
     )
     mock_spl_transfer.assert_called_once_with("spl_params")
-    mock_message.assert_called_once_with(
+    mock_try_compile.assert_called_once_with(
         payer=fake_base.BASE_SENDER_KEYPAIR.pubkey(),
         instructions=["spl_ix"],
+        address_lookup_table_accounts=[],
+        recent_blockhash=fake_token_client.get_latest_blockhash.return_value.value.blockhash,
     )
-    mock_transaction.assert_called_once_with(
-        message="message_obj",
-        from_keypairs=[sender_keypair, fake_base.BASE_SENDER_KEYPAIR],
-        recent_blockhash=fake_base.http_client.get_latest_blockhash.return_value.value.blockhash,
+    mock_versioned_transaction.assert_called_once_with(
+        "message_obj",
+        [sender_keypair, fake_base.BASE_SENDER_KEYPAIR],
     )
     assert result == "tx_obj"
 
@@ -172,9 +169,9 @@ def test_create_spl_token_transaction_builds_instruction_and_transaction():
 def test_create_spl_token_transaction_raises_when_mint_not_found():
     fake_base = MagicMock()
     fake_base.BASE_SENDER_KEYPAIR = Keypair()
-    fake_base.http_client.get_account_info.return_value = SimpleNamespace(value=None)
 
     fake_token_client = MagicMock()
+    fake_token_client.get_account_info.return_value = SimpleNamespace(value=None)
     fake_token_client.get_or_create_associated_token_address.side_effect = [
         Pubkey.from_bytes(bytes([5] * 32)),
         Pubkey.from_bytes(bytes([6] * 32)),
@@ -197,4 +194,4 @@ def test_create_spl_token_transaction_raises_when_mint_not_found():
             token_mint_address=token_mint,
         )
 
-    fake_base.http_client.get_token_supply.assert_not_called()
+    fake_token_client.get_token_supply.assert_not_called()

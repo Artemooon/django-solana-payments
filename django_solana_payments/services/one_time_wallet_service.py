@@ -156,7 +156,7 @@ class OneTimeWalletService:
                 mint_pubkey,
             )
 
-            ata_info = base_solana_client.http_client.get_account_info(ata).value
+            ata_info = self.solana_token_client.get_account_info(ata).value
             if not ata_info:
                 solana_logger.debug("ATA %s does not exist, skipping", ata)
                 continue
@@ -164,11 +164,9 @@ class OneTimeWalletService:
             ata_program_id = ata_info.owner  # same for all ATAs
 
             try:
-                token_balance = (
-                    base_solana_client.http_client.get_token_account_balance(
-                        ata
-                    ).value.amount
-                )
+                token_balance = self.solana_token_client.get_token_account_balance(
+                    ata
+                ).value.amount
             except Exception as e:
                 solana_logger.warning("Failed to read token balance for %s: %s", ata, e)
                 continue

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Result</title>
+</head>
+<body>
+  <h1>{% if result == "success" %}Payment success{% else %}Payment failed{% endif %}</h1>
+  <p>Status: {{ payment.status }}</p>
+  <p>Message: {{ payment.message }}</p>
+  <p>Token: {{ payment.token }}</p>
+  <p><a href="{% url 'payment-details' token=payment.token %}">Back to payment</a></p>
+</body>
+</html>

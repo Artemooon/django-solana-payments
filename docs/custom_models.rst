@@ -28,7 +28,7 @@ When you subclass them, you inherit required payment fields and behavior:
 Creating Custom Models
 ----------------------
 
-Here is an example of how to create custom models. In your app's `models.py` (e.g., `payments/models.py`):
+Here is an example of how to create custom models. In your app's `models.py` (e.g., `solana_payments/models.py`):
 
 .. code-block:: python
 
@@ -61,11 +61,11 @@ After creating your custom models, you need to tell `django-solana-payments` to 
 
     SOLANA_PAYMENTS = {
         # ... other settings
-        "SOLANA_PAYMENT_MODEL": "payments.CustomSolanaPayment",
-        "PAYMENT_CRYPTO_TOKEN_MODEL": "payments.CustomPaymentToken",
+        "SOLANA_PAYMENT_MODEL": "solana_payments.CustomSolanaPayment",
+        "PAYMENT_CRYPTO_TOKEN_MODEL": "solana_payments.CustomPaymentToken",
     }
 
-Make sure to replace `"payments.CustomSolanaPayment"` and `"payments.CustomPaymentToken"` with the correct import paths for your models.
+Make sure to replace `"solana_payments.CustomSolanaPayment"` and `"solana_payments.CustomPaymentToken"` with the correct import paths for your models.
 
 After configuring your settings, run migrations to create the tables for your new models:
 
