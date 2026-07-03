@@ -64,3 +64,115 @@ def test_render_solana_payment_widget_generates_mount_id_when_missing():
         )
         == config
     )
+
+
+def test_render_solana_payment_widget_serializes_api_driven_config():
+    config = {
+        "title": "Solana Payment",
+        "api": {
+            "baseUrl": "/api/solana/",
+            "initiatePayload": {
+                "customer_id": "demo-customer",
+                "label": "Order 1001",
+                "message": "Demo payment",
+            },
+        },
+        "wallet": {
+            "enabled": True,
+            "rpcUrl": "https://api.devnet.solana.com",
+            "supportedWallets": ["phantom", "solflare"],
+        },
+        "verification": {
+            "pollIntervalMs": 1500,
+            "timeoutMs": 45000,
+            "successStatuses": ["confirmed", "finalized", "processed"],
+        },
+    }
+
+    rendered = _render_widget_tag(config=config, mount_id="checkout-widget")
+
+    assert _extract_json_script_content(rendered, "checkout-widget-config") == config
+
+
+def test_render_solana_payment_widget_serializes_manual_transaction_config():
+    config = {
+        "title": "Solana Payment",
+        "caption": "Open a compatible wallet and scan the QR code.",
+        "wallet": {
+            "enabled": True,
+            "rpcUrl": "https://api.devnet.solana.com",
+            "supportedWallets": ["phantom", "solflare"],
+        },
+        "transaction": {
+            "recipient": "RECIPIENT_ADDRESS",
+            "amount": "1.5",
+            "tokenType": "NATIVE",
+            "label": "Order 1001",
+            "message": "Demo payment",
+            "currencySymbol": "SOL",
+        },
+        "verification": {
+            "enabled": True,
+            "verifyEndpoint": "/solana-payments/verify-transfer/RECIPIENT_ADDRESS/",
+            "pollIntervalMs": 1500,
+            "timeoutMs": 45000,
+            "successStatuses": ["confirmed", "finalized", "processed"],
+        },
+    }
+
+    rendered = _render_widget_tag(config=config, mount_id="checkout-widget")
+
+    assert _extract_json_script_content(rendered, "checkout-widget-config") == config
+
+
+def test_render_solana_payment_widget_serializes_manual_token_selector_config():
+    config = {
+        "title": "Solana Payment",
+        "wallet": {
+            "enabled": True,
+            "rpcUrl": "https://api.devnet.solana.com",
+            "supportedWallets": ["phantom", "solflare"],
+        },
+        "transaction": {
+            "recipient": "RECIPIENT_ADDRESS",
+            "amount": "1.5",
+            "tokenType": "NATIVE",
+            "label": "Order 1001",
+            "message": "Demo payment",
+        },
+        "tokens": {
+            "initialTokens": [
+                {
+                    "id": 1,
+                    "tokenType": "NATIVE",
+                    "mintAddress": None,
+                    "amount": "0.015",
+                    "name": "Solana",
+                    "symbol": "SOL",
+                },
+                {
+                    "id": 2,
+                    "tokenType": "SPL",
+                    "mintAddress": "Es9vMFrzaCERmJfrF4H2FYD7P7C8XxYt3qYh3CwG4x4R",
+                    "amount": "1.25",
+                    "name": "USD Coin",
+                    "symbol": "USDC",
+                },
+            ],
+        },
+        "verification": {
+            "enabled": True,
+            "verifyEndpoint": "/solana-payments/verify-transfer/RECIPIENT_ADDRESS/",
+            "pollIntervalMs": 1500,
+            "timeoutMs": 45000,
+            "successStatuses": ["confirmed", "finalized", "processed"],
+        },
+        "theme": {
+            "accent": "#0f766e",
+            "qrSize": 256,
+        },
+    }
+
+    rendered = _render_widget_tag(config=config, mount_id="checkout-widget")
+
+    assert _extract_json_script_content(rendered, "checkout-widget-config") == config

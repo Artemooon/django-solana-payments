@@ -18,7 +18,7 @@ export function mountSolanaPaymentWidget(
 
   root.render(
     <WidgetProviders
-      rpcUrl={config.wallet?.rpcUrl || "https://api.devnet.solana.com"}
+      rpcUrl={config.wallet?.rpcUrl || "https://api.mainnet-beta.solana.com/"}
       supportedWallets={supportedWallets}
       walletAdapterFactory={config.wallet?.walletAdapterFactory}
     >

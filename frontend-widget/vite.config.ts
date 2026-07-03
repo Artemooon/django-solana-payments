@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   build: {
     target: "es2020",
-    outDir: "../examples/demo_project/solana_payments/static/solana_payments/solana-payment-widget",
+    outDir: "../django_solana_payments/static/solana_payments/solana-payment-widget",
     emptyOutDir: true,
     cssCodeSplit: false,
     rollupOptions: {

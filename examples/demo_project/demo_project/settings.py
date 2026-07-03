@@ -154,8 +154,6 @@ PAYMENT_VARIANTS = {
         {
             "rpc_url": "https://api.devnet.solana.com",
             "supported_wallets": ["phantom", "solflare"],
-            "widget_js_path": "solana_payments/solana-payment-widget/widget.js",
-            "widget_css_path": "solana_payments/solana-payment-widget/widget.css",
         },
     ),
 }

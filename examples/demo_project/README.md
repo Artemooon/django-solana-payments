@@ -44,6 +44,29 @@ The `payments/signals.py` file demonstrates how to use the `solana_payment_accep
 ### 3. Admin Customization
 Custom admin interface for managing payments and tokens.
 
+### 4. Demo Pages
+
+- Standalone widget demo: `http://127.0.0.1:8000/`
+- Alternate widget theme: `http://127.0.0.1:8000/themes/editorial/`
+- Django admin: `http://127.0.0.1:8000/admin/`
+
+### 5. `django-payments` Integration Demo
+
+The demo project also includes a `django-payments` checkout flow wired to the
+`django-solana-payments` provider.
+
+Start here:
+
+- Checkout entry page: `http://127.0.0.1:8000/django-payments/`
+
+What happens next:
+
+1. Visiting `/django-payments/` creates a sample `django-payments` order.
+2. The app redirects to `/django-payments/<token>/`, which renders the payment details page and embedded Solana checkout widget.
+3. Complete the transfer in the widget and wait for verification.
+4. On success, the browser should navigate to `/django-payments/<token>/success/`.
+5. If the payment is rejected or fails verification, the failure page is `/django-payments/<token>/failure/`.
+
 ## Testing on Devnet
 
 ### Setup Solana CLI

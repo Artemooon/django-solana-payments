@@ -2,17 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { WalletReadyState, type WalletName } from "@solana/wallet-adapter-base";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 
+import {
+  buildVerificationUrl,
+  pollPaymentVerification,
+} from "../api/verification";
 import type {
   PaymentWidgetTransactionConfig,
   PaymentWidgetVerificationConfig,
   SupportedWallet,
 } from "../types";
 import {
-  buildVerificationUrl,
   buildPaymentTransaction,
   confirmSignature,
   formatSolAmountForDisplay,
-  pollPaymentVerification,
 } from "../utils";
 
 type WalletActionBlockProps = {

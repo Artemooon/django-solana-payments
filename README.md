@@ -30,7 +30,7 @@ See the full documentation at https://django-solana-payments.readthedocs.io/
     pip install django-solana-payments
     ```
 
-    For DRF support, which provides API endpoints for creating and managing payments, install the `drf` extra:
+    For DRF support endpoints support and correct frontend widget work, install the `drf` extra:
     ```bash
     pip install "django-solana-payments[drf]"
     ```
@@ -42,14 +42,46 @@ See the full documentation at https://django-solana-payments.readthedocs.io/
     ```
     This provides the `django-payments` provider and checkout widget integration.
 
-2.  **Configure `settings.py`**
+2.  **Add the app to `INSTALLED_APPS`**
     ```python
     INSTALLED_APPS = [
         ...,
         'django_solana_payments',
     ]
+    ```
 
+3.  **Create custom payment models**
+    Create your own models that inherit from the library's abstract base models.
+
+    ```python
+    from django.db import models
+
+    from django_solana_payments.models import (
+        AbstractPaymentToken,
+        AbstractSolanaPayment,
+    )
+
+
+    class CustomSolanaPayment(AbstractSolanaPayment):
+        customer_id = models.CharField(max_length=255, blank=True, null=True)
+
+
+    class CustomPaymentToken(AbstractPaymentToken):
+        name = models.CharField(max_length=100)
+        symbol = models.CharField(max_length=10)
+    ```
+
+    See [docs/custom_models.rst](./docs/custom_models.rst) for more details.
+
+4.  **Configure `SOLANA_PAYMENTS`**
+    After creating your models, point `SOLANA_PAYMENTS` at those model paths and
+    configure the rest of the library settings.
+
+    ```python
     SOLANA_PAYMENTS = {
+        "SOLANA_PAYMENT_MODEL": "solana_payments.CustomSolanaPayment", # Custom model for solana payment
+        "PAYMENT_CRYPTO_TOKEN_MODEL": "solana_payments.CustomPaymentToken", # Custom model for solana payment token
+    
         "RPC_URL": "https://api.mainnet-beta.solana.com",
         "RECEIVER_ADDRESS": "YOUR_WALLET_ADDRESS", # Wallet that receives funds
         "FEE_PAYER_KEYPAIR": "WALLET_KEYPAIR", # Wallet keypair that pays network fees (address will be derived from the keypair)
@@ -60,8 +92,6 @@ See the full documentation at https://django-solana-payments.readthedocs.io/
         "RPC_RATE_LIMIT": 0, # Optional AsyncClient rate limit; 0 disables limiter
         "ONE_TIME_WALLETS_ENCRYPTION_ENABLED": True, # Enables encryption for one-time solana_payments wallets
         "ONE_TIME_WALLETS_ENCRYPTION_KEY": "ONE_TIME_WALLETS_ENCRYPTION_KEY", # Generate with the Fernet.generate_key()
-        "SOLANA_PAYMENT_MODEL": "solana_payments.CustomSolanaPayment", # Custom model for solana payment
-        "PAYMENT_CRYPTO_TOKEN_MODEL": "solana_payments.CustomPaymentToken", # Custom model for solana payment token
         "RPC_COMMITMENT": "Confirmed", # RPC Commitment
         "PAYMENT_ACCEPTANCE_COMMITMENT": "Confirmed", # Commitment for payment acceptance
         "MAX_ATAS_PER_TX": 8, # Max associated token accounts to create/close per transaction (needed for oen time wallets creation)
@@ -69,7 +99,7 @@ See the full documentation at https://django-solana-payments.readthedocs.io/
     }
     ```
 
-3.  **Migrate and Route**
+5.  **Migrate and Route**
 ```bash
 python manage.py migrate
 ```
@@ -81,7 +111,7 @@ urlpatterns = [
 ]
 ```
 
-4. **Open the admin panel and create payment token records, specifying the correct mint addresses for SPL tokens.**
+6. **Open the admin panel and create payment token records, specifying the correct mint addresses for SPL tokens.**
 
 ## Integration in 3 simple steps
 

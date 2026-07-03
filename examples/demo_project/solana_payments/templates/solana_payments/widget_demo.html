@@ -24,14 +24,7 @@
         </nav>
       </section>
       <section class="demo-widget">
-        {% if error_message %}
-          <div class="demo-error-card">
-            <strong>Demo payment could not be created.</strong>
-            <p>Configure Solana settings and at least one active payment token, then reload the page.</p>
-          </div>
-        {% else %}
-          {% render_solana_payment_widget widget_config "demo-solana-widget" %}
-        {% endif %}
+        {% render_solana_payment_widget widget_config "demo-solana-widget" %}
       </section>
     </main>
     <script type="module" src="{% static 'solana_payments/solana-payment-widget/widget.js' %}?v={{ widget_asset_version }}"></script>

@@ -4,15 +4,9 @@ from pathlib import Path
 from django.conf import settings
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.decorators.csrf import ensure_csrf_cookie
 from payments import PaymentStatus, get_payment_model
-from solana_payments.widget_config import (
-    build_payment_widget_config,
-    build_solana_pay_url,
-)
-
-from django_solana_payments import create_payment
-from django_solana_payments.choices import TokenTypes
-from django_solana_payments.exceptions import PaymentConfigurationError
+from solana_payments.widget_config import build_payment_widget_config
 
 Payment = get_payment_model()
 
@@ -74,87 +68,19 @@ def _render_widget_demo(
     page_title: str,
     page_description: str,
 ):
-    payment = None
-    error_message = None
-    solana_pay_url = ""
     default_label = request.GET.get("label", "Demo payment")
     default_message = request.GET.get("message", "Scan with a Solana Pay wallet")
-    token = None
-    token_prices = []
-    try:
-        payment = create_payment(
-            {
-                "customer_id": request.GET.get("customer_id", "demo-customer"),
-            }
-        )
-        token_prices = list(
-            payment.crypto_prices.select_related("token").order_by("id")
-        )
-        if not token_prices:
-            raise PaymentConfigurationError(
-                "No payment crypto prices were created for the demo payment."
-            )
-
-        payment_price = token_prices[0]
-        token = payment_price.token
-        spl_token = (
-            token.mint_address
-            if token.token_type == TokenTypes.SPL and token.mint_address
-            else None
-        )
-        solana_pay_url = build_solana_pay_url(
-            recipient=payment.payment_address,
-            amount=str(payment_price.amount_in_crypto),
-            label=getattr(payment, "label", None) or default_label,
-            message=getattr(payment, "message", None) or default_message,
-            spl_token=spl_token,
-        )
-    except Exception as exc:
-        error_message = str(exc)
+    api_base_url = reverse("initiate-payment").removesuffix("initiate/")
 
     widget_config = build_payment_widget_config(
-        solana_pay_url=solana_pay_url,
+        api_base_url=api_base_url,
         rpc_url=settings.SOLANA_PAYMENTS["RPC_URL"],
-        transaction={
-            "recipient": payment.payment_address if payment else "",
-            "amount": str(token_prices[0].amount_in_crypto) if token_prices else "",
-            "label": (
-                (getattr(payment, "label", None) or default_label)
-                if payment
-                else default_label
-            ),
-            "message": (
-                (getattr(payment, "message", None) or default_message)
-                if payment
-                else default_message
-            ),
-            "tokenType": token.token_type if token else TokenTypes.NATIVE,
-            "mintAddress": token.mint_address if token else None,
-            "currencySymbol": getattr(token, "symbol", "SOL") if token else "SOL",
-        },
-        tokens={
-            "initialTokens": [
-                {
-                    "id": price.token.id,
-                    "tokenType": price.token.token_type,
-                    "mintAddress": price.token.mint_address,
-                    "amount": str(price.amount_in_crypto),
-                    "name": price.token.name,
-                    "symbol": price.token.symbol,
-                }
-                for price in token_prices
-            ],
+        initiate_payload={
+            "customer_id": request.GET.get("customer_id", "demo-customer"),
+            "label": default_label,
+            "message": default_message,
         },
         verification={
-            "enabled": bool(payment),
-            "verifyEndpoint": (
-                reverse(
-                    "verify-transfer",
-                    kwargs={"payment_address": payment.payment_address},
-                )
-                if payment
-                else ""
-            ),
             "pollIntervalMs": 1500,
             "timeoutMs": 45000,
             "successStatuses": ["confirmed", "finalized", "processed"],
@@ -169,9 +95,6 @@ def _render_widget_demo(
         {
             "widget_config": widget_config,
             "widget_asset_version": get_widget_asset_version(),
-            "solana_pay_url": solana_pay_url,
-            "payment": payment,
-            "error_message": error_message,
             "theme_name": theme_name,
             "page_title": page_title,
             "page_description": page_description,
@@ -179,6 +102,7 @@ def _render_widget_demo(
     )
 
 
+@ensure_csrf_cookie
 def widget_demo(request):
     return _render_widget_demo(
         request,
@@ -191,6 +115,7 @@ def widget_demo(request):
     )
 
 
+@ensure_csrf_cookie
 def widget_demo_editorial(request):
     return _render_widget_demo(
         request,

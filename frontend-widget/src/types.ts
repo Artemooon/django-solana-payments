@@ -56,14 +56,33 @@ export type PaymentWidgetVerificationConfig = {
   successStatuses?: string[];
 };
 
-export type PaymentWidgetConfig = {
-  solanaPayUrl: string;
+export type PaymentWidgetApiConfig = {
+  baseUrl: string;
+  initiatePayload?: Record<string, unknown>;
+};
+
+type PaymentWidgetConfigBase = {
   title?: string;
   caption?: string;
   mountId?: string;
   theme?: PaymentWidgetTheme;
   wallet?: PaymentWidgetWalletConfig;
-  transaction?: PaymentWidgetTransactionConfig;
   tokens?: PaymentWidgetTokensConfig;
   verification?: PaymentWidgetVerificationConfig;
+  api?: PaymentWidgetApiConfig;
 };
+
+export type PaymentWidgetConfig =
+  | (PaymentWidgetConfigBase & {
+      solanaPayUrl: string;
+      transaction?: PaymentWidgetTransactionConfig;
+    })
+  | (PaymentWidgetConfigBase & {
+      solanaPayUrl?: string;
+      transaction: PaymentWidgetTransactionConfig;
+    })
+  | (PaymentWidgetConfigBase & {
+      solanaPayUrl?: string;
+      transaction?: PaymentWidgetTransactionConfig;
+      api: PaymentWidgetApiConfig;
+    });
